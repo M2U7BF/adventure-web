@@ -38,7 +38,8 @@ function drawObjects(ctx, state) {
 
 function drawPlayer(ctx, state) {
   const { player } = state;
-  ctx.drawImage(player.sprites[player.direction], player.screenX, player.screenY, TILE_SIZE, TILE_SIZE);
+  const sprite = player.sprites[player.direction][player.animFrame];
+  ctx.drawImage(sprite, player.screenX, player.screenY, TILE_SIZE, TILE_SIZE);
 }
 
 function strokedText(ctx, text, x, y) {
@@ -47,6 +48,21 @@ function strokedText(ctx, text, x, y) {
   ctx.strokeText(text, x, y);
   ctx.fillStyle = "white";
   ctx.fillText(text, x, y);
+}
+
+function panel(ctx, x, y, width, height, radius = 10) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + width, y, x + width, y + height, radius);
+  ctx.arcTo(x + width, y + height, x, y + height, radius);
+  ctx.arcTo(x, y + height, x, y, radius);
+  ctx.arcTo(x, y, x + width, y, radius);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(10, 12, 20, 0.55)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 }
 
 function drawFinishedUI(ctx, state) {
@@ -62,14 +78,31 @@ function drawFinishedUI(ctx, state) {
 
 function drawHud(ctx, state) {
   ctx.textAlign = "left";
-  ctx.font = "40px Arial";
-  ctx.drawImage(state.keyIcon, TILE_SIZE / 2, TILE_SIZE / 2, TILE_SIZE, TILE_SIZE);
-  strokedText(ctx, "x " + state.player.hasKey, 74, 65);
-  strokedText(ctx, "Time : " + state.playTime.toFixed(1), TILE_SIZE * 11, 65);
+
+  // Key count pill (top-left).
+  panel(ctx, 12, 10, 132, 52);
+  ctx.drawImage(state.keyIcon, 20, 18, 36, 36);
+  ctx.font = "bold 24px Arial";
+  strokedText(ctx, "x " + state.player.hasKey, 66, 44);
+
+  // Timer pill (top-right).
+  const timeText = "Time : " + state.playTime.toFixed(1);
+  ctx.font = "bold 24px Arial";
+  const timeWidth = ctx.measureText(timeText).width;
+  const timePanelWidth = timeWidth + 32;
+  const timePanelX = SCREEN_WIDTH - timePanelWidth - 12;
+  panel(ctx, timePanelX, 10, timePanelWidth, 52);
+  strokedText(ctx, timeText, timePanelX + 16, 44);
 
   if (state.messageOn) {
     ctx.font = "20px Arial";
-    strokedText(ctx, state.message, TILE_SIZE * 5, TILE_SIZE * 5);
+    const msgWidth = ctx.measureText(state.message).width;
+    const msgX = SCREEN_WIDTH / 2 - msgWidth / 2 - 16;
+    const msgY = TILE_SIZE * 5 - 26;
+    panel(ctx, msgX, msgY, msgWidth + 32, 38);
+    ctx.textAlign = "center";
+    strokedText(ctx, state.message, SCREEN_WIDTH / 2, msgY + 25);
+    ctx.textAlign = "left";
   }
 }
 

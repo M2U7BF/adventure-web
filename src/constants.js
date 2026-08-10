@@ -14,15 +14,32 @@ export const FPS = 60;
 export const STEP_MS = 1000 / FPS;
 
 // ---------------------------------------------------------------------
-// Tile definitions: index -> {src, collision}
+// Tile definitions: index -> {src, collision, destructibleTo}
+// `destructibleTo` is the tile index a destructible obstacle turns into
+// once the player chops it down (see gameplay.js#chopTile).
 // ---------------------------------------------------------------------
+export const GRASS_TILE = 0;
+export const WALL_TILE = 1;
+export const WATER_TILE = 2;
+export const EARTH_TILE = 3;
+export const TREE_TILE = 4;
+export const SAND_TILE = 5;
+export const FLOWER_TILE = 6;
+export const PATH_TILE = 7;
+export const BUSH_TILE = 8;
+export const ROCK_TILE = 9;
+
 export const TILE_DEFS = [
   { src: "assets/tiles/grass.png", collision: false }, // 0
   { src: "assets/tiles/wall.png", collision: true }, // 1
   { src: "assets/tiles/water.png", collision: true }, // 2
   { src: "assets/tiles/earth.png", collision: false }, // 3
-  { src: "assets/tiles/tree.png", collision: true }, // 4
+  { src: "assets/tiles/tree.png", collision: true, destructibleTo: GRASS_TILE }, // 4
   { src: "assets/tiles/sand.png", collision: false }, // 5
+  { src: "assets/tiles/flower.png", collision: false }, // 6
+  { src: "assets/tiles/path.png", collision: false }, // 7
+  { src: "assets/tiles/bush.png", collision: true, destructibleTo: GRASS_TILE }, // 8
+  { src: "assets/tiles/rock.png", collision: true }, // 9
 ];
 
 export const OBJECT_DEFS = {
@@ -46,14 +63,17 @@ export const OBJECT_PLACEMENTS = [
 
 export const DEFAULT_PLAYER_TILE = [23, 21];
 
-export const MAP_SRC = "assets/maps/worldmap.txt";
-
+// Two frames per direction: [idle/step-1, step-2]. render.js alternates
+// between them while the player is moving to animate the walk cycle.
 export const PLAYER_SPRITE_SRC = {
-  up: "assets/player/WalkingPlayer_back.png",
-  down: "assets/player/WalkingPlayer_front.png",
-  left: "assets/player/WalkingPlayer_left.png",
-  right: "assets/player/WalkingPlayer_right.png",
+  up: ["assets/player/WalkingPlayer_back.png", "assets/player/WalkingPlayer_back_2.png"],
+  down: ["assets/player/WalkingPlayer_front.png", "assets/player/WalkingPlayer_front_2.png"],
+  left: ["assets/player/WalkingPlayer_left.png", "assets/player/WalkingPlayer_left_2.png"],
+  right: ["assets/player/WalkingPlayer_right.png", "assets/player/WalkingPlayer_right_2.png"],
 };
+
+// Number of update ticks a walk-cycle frame is held before switching.
+export const ANIMATION_FRAME_TICKS = 8;
 
 export const SFX_SRC = {
   bgm: { src: "assets/sounds/theme4.mp3", loop: true },
@@ -61,6 +81,7 @@ export const SFX_SRC = {
   powerup: { src: "assets/sounds/powerup2.mp3" },
   unlock: { src: "assets/sounds/unlock2.mp3" },
   fanfare: { src: "assets/sounds/fanfare3.mp3" },
+  chop: { src: "assets/sounds/coin2.mp3" },
 };
 
 export const KEY_MAP = {
@@ -69,3 +90,7 @@ export const KEY_MAP = {
   ArrowLeft: "left", KeyA: "left",
   ArrowRight: "right", KeyD: "right",
 };
+
+// Pressed to chop down a destructible obstacle (tree/bush) the player is
+// facing (see gameplay.js#chopTile).
+export const ACTION_KEYS = new Set(["Space", "Enter"]);

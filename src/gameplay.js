@@ -1,7 +1,13 @@
-import { FPS } from "./constants.js";
+import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS } from "./constants.js";
 import { checkTileCollision, checkObjectCollision } from "./collision.js";
 
 const MESSAGE_DURATION_TICKS = 30;
+const DIRECTION_OFFSET = {
+  up: [0, -1],
+  down: [0, 1],
+  left: [-1, 0],
+  right: [1, 0],
+};
 
 function showMessage(state, text) {
   state.message = text;
@@ -50,22 +56,61 @@ function pickUpObject(state, index) {
   }
 }
 
+// Chops down the destructible obstacle (tree/bush) directly in front of the
+// player, if any, turning its tile into the tile named by its
+// `destructibleTo` definition (see constants.js#TILE_DEFS).
+function chopTile(state) {
+  const player = state.player;
+  const [dCol, dRow] = DIRECTION_OFFSET[player.direction];
+  const playerCol = Math.floor((player.worldX + player.solidArea.x + player.solidArea.width / 2) / TILE_SIZE);
+  const playerRow = Math.floor((player.worldY + player.solidArea.y + player.solidArea.height / 2) / TILE_SIZE);
+  const col = playerCol + dCol;
+  const row = playerRow + dRow;
+
+  if (col < 0 || col >= MAX_WORLD_COL || row < 0 || row >= MAX_WORLD_ROW) return;
+
+  const tileIndex = state.mapTileNum[col][row];
+  const tileDef = state.tiles[tileIndex];
+  if (!tileDef || tileDef.destructibleTo === undefined) return;
+
+  state.mapTileNum[col][row] = tileDef.destructibleTo;
+  state.sfx.chop.play();
+  showMessage(state, "You cleared the way");
+}
+
 function movePlayer(state) {
   const player = state.player;
   const { keysHeld } = state;
+  player.isMoving = false;
 
   if (keysHeld.has("up")) {
     player.direction = "up";
-    if (!player.collisionOn) player.worldY -= player.speed;
+    if (!player.collisionOn) { player.worldY -= player.speed; player.isMoving = true; }
   } else if (keysHeld.has("down")) {
     player.direction = "down";
-    if (!player.collisionOn) player.worldY += player.speed;
+    if (!player.collisionOn) { player.worldY += player.speed; player.isMoving = true; }
   } else if (keysHeld.has("left")) {
     player.direction = "left";
-    if (!player.collisionOn) player.worldX -= player.speed;
+    if (!player.collisionOn) { player.worldX -= player.speed; player.isMoving = true; }
   } else if (keysHeld.has("right")) {
     player.direction = "right";
-    if (!player.collisionOn) player.worldX += player.speed;
+    if (!player.collisionOn) { player.worldX += player.speed; player.isMoving = true; }
+  }
+}
+
+// Alternates the player's walk-cycle frame while moving; holds frame 0
+// (idle pose) as soon as they stop.
+function tickAnimation(state) {
+  const player = state.player;
+  if (!player.isMoving) {
+    player.animTimer = 0;
+    player.animFrame = 0;
+    return;
+  }
+  player.animTimer++;
+  if (player.animTimer >= ANIMATION_FRAME_TICKS) {
+    player.animTimer = 0;
+    player.animFrame = 1 - player.animFrame;
   }
 }
 
@@ -88,6 +133,12 @@ export function update(state) {
   pickUpObject(state, checkObjectCollision(player, state.worldObjects));
 
   movePlayer(state);
+  tickAnimation(state);
+
+  if (state.actionQueued) {
+    chopTile(state);
+    state.actionQueued = false;
+  }
 
   state.playTime += 1 / FPS;
   tickMessage(state);

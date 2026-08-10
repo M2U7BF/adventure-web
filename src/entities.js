@@ -14,6 +14,9 @@ export function createPlayer() {
     screenX: SCREEN_WIDTH / 2 - TILE_SIZE / 2,
     screenY: SCREEN_HEIGHT / 2 - TILE_SIZE / 2,
     sprites: {},
+    isMoving: false,
+    animTimer: 0,
+    animFrame: 0,
   };
 }
 

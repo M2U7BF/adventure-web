@@ -145,6 +145,12 @@ canvas#game {
   touch-action: manipulation;
 }
 
+#actionBtn {
+  margin-top: 4px;
+  background: #4a3624;
+  border-color: #6b4e30;
+}
+
 @media (hover: none) and (pointer: coarse) {
   #touchpad {
     display: flex;
