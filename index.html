@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adventure - Web版</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="wrap">
+    <h1>Adventure</h1>
+    <div id="stage">
+      <canvas id="game" width="768" height="576"></canvas>
+      <div id="overlay">
+        <div id="overlayInner">
+          <p id="overlayTitle">Adventure</p>
+          <p id="overlayText">読み込み中...</p>
+          <button id="startBtn" hidden>クリックしてスタート</button>
+        </div>
+      </div>
+    </div>
+    <p class="help">
+      移動: 矢印キー / WASD &nbsp;|&nbsp; 鍵を3つ集めてドアを開け、ブーツで加速し、宝箱を目指そう
+    </p>
+    <div id="touchpad">
+      <button data-dir="up">▲</button>
+      <div class="mid">
+        <button data-dir="left">◀</button>
+        <button data-dir="down">▼</button>
+        <button data-dir="right">▶</button>
+      </div>
+    </div>
+    <p class="credit">
+      Original Java game: <a href="https://github.com/M2U7BF/Adventure" target="_blank" rel="noopener">M2U7BF/Adventure</a>
+    </p>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
