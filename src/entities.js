@@ -1,0 +1,32 @@
+import { TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_PLAYER_TILE, OBJECT_DEFS } from "./constants.js";
+
+export function createPlayer() {
+  return {
+    worldX: TILE_SIZE * DEFAULT_PLAYER_TILE[0],
+    worldY: TILE_SIZE * DEFAULT_PLAYER_TILE[1],
+    speed: 8,
+    direction: "down",
+    hasKey: 0,
+    solidArea: { x: 8, y: 16, width: 32, height: 32 },
+    solidAreaDefaultX: 8,
+    solidAreaDefaultY: 16,
+    collisionOn: false,
+    screenX: SCREEN_WIDTH / 2 - TILE_SIZE / 2,
+    screenY: SCREEN_HEIGHT / 2 - TILE_SIZE / 2,
+    sprites: {},
+  };
+}
+
+export function makeObjectInstance(def) {
+  return {
+    type: def.type,
+    image: OBJECT_DEFS[def.type].img,
+    collision: OBJECT_DEFS[def.type].collision,
+    worldX: def.col * TILE_SIZE,
+    worldY: def.row * TILE_SIZE,
+    solidArea: { x: 0, y: 0, width: TILE_SIZE, height: TILE_SIZE },
+    solidAreaDefaultX: 0,
+    solidAreaDefaultY: 0,
+    removed: false,
+  };
+}
