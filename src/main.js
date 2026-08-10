@@ -1,6 +1,6 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, TILE_DEFS, OBJECT_DEFS, OBJECT_PLACEMENTS, MAP_SRC, PLAYER_SPRITE_SRC, SFX_SRC } from "./constants.js";
-import { loadImage, loadText, SfxPlayer } from "./assets.js";
-import { parseMap } from "./map.js";
+import { SCREEN_WIDTH, SCREEN_HEIGHT, TILE_DEFS, OBJECT_DEFS, OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE, PLAYER_SPRITE_SRC, SFX_SRC } from "./constants.js";
+import { loadImage, SfxPlayer } from "./assets.js";
+import { generateMap } from "./mapgen.js";
 import { createPlayer, makeObjectInstance } from "./entities.js";
 import { createInitialState } from "./state.js";
 import { update } from "./gameplay.js";
@@ -34,13 +34,10 @@ const loop = new GameLoop(
 );
 
 async function loadWorld() {
-  const [mapText, ...tileImgs] = await Promise.all([
-    loadText(MAP_SRC),
-    ...TILE_DEFS.map((t) => loadImage(t.src)),
-  ]);
+  const tileImgs = await Promise.all(TILE_DEFS.map((t) => loadImage(t.src)));
 
-  state.tiles = TILE_DEFS.map((def, i) => ({ img: tileImgs[i], collision: def.collision }));
-  state.mapTileNum = parseMap(mapText);
+  state.tiles = TILE_DEFS.map((def, i) => ({ img: tileImgs[i], collision: def.collision, destructibleTo: def.destructibleTo }));
+  state.mapTileNum = generateMap(OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE);
 
   const objTypeNames = Object.keys(OBJECT_DEFS);
   const objImgs = await Promise.all(objTypeNames.map((t) => loadImage(OBJECT_DEFS[t].src)));
@@ -54,9 +51,11 @@ async function loadWorld() {
 async function loadPlayer() {
   const player = createPlayer();
   const entries = Object.entries(PLAYER_SPRITE_SRC);
-  const imgs = await Promise.all(entries.map(([, src]) => loadImage(src)));
+  const frameSets = await Promise.all(
+    entries.map(([, srcs]) => Promise.all(srcs.map(loadImage)))
+  );
   entries.forEach(([direction], i) => {
-    player.sprites[direction] = imgs[i];
+    player.sprites[direction] = frameSets[i];
   });
   state.player = player;
 }
@@ -74,7 +73,7 @@ async function boot() {
     await Promise.all([loadWorld(), loadPlayer()]);
     loadSfx();
 
-    setupInput(state, document.getElementById("touchpad"));
+    setupInput(state, document.getElementById("touchpad"), document.getElementById("actionBtn"));
     draw(ctx, state);
     overlay.show("Adventure", "矢印キー / WASDで移動\n鍵を集めてドアを開け、宝箱を探そう", true);
   } catch (err) {

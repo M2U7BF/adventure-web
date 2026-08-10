@@ -10,6 +10,8 @@ export function createInitialState() {
     keyIcon: null,
     sfx: null,
     keysHeld: new Set(),
+    actionKeyDown: false,
+    actionQueued: false,
     messageOn: false,
     message: "",
     messageCounter: 0,
