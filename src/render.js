@@ -106,6 +106,14 @@ function drawFinishedUI(ctx, state) {
 
   ctx.font = "bold 64px Arial";
   strokedText(ctx, "Congratulations!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 2);
+
+  if (state.bestTime !== null) {
+    ctx.font = "24px Arial";
+    const bestText = state.isNewBest
+      ? "New Best! : " + state.bestTime.toFixed(1)
+      : "ベストタイム : " + state.bestTime.toFixed(1);
+    strokedText(ctx, bestText, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 4);
+  }
   ctx.textAlign = "left";
 }
 
