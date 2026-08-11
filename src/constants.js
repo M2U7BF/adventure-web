@@ -63,6 +63,10 @@ export const OBJECT_PLACEMENTS = [
 
 export const DEFAULT_PLAYER_TILE = [23, 21];
 
+// localStorage key the best clear time (in seconds, see main.js#recordFinishTime)
+// is persisted under.
+export const BEST_TIME_STORAGE_KEY = "adventure_best_time";
+
 // ---------------------------------------------------------------------
 // Enemies / HP
 // ---------------------------------------------------------------------
