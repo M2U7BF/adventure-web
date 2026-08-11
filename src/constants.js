@@ -42,11 +42,15 @@ export const TILE_DEFS = [
   { src: "assets/tiles/rock.png", collision: true }, // 9
 ];
 
+// Axe/Shield have no sprite asset (see render.js#drawIconObject, which draws
+// them procedurally), so they're the only entries without a `src`.
 export const OBJECT_DEFS = {
   Key: { src: "assets/objects/key.png", collision: false },
   Door: { src: "assets/objects/door.png", collision: true },
   Chest: { src: "assets/objects/chest.png", collision: false },
   Boots: { src: "assets/objects/boots.png", collision: false },
+  Axe: { collision: false },
+  Shield: { collision: false },
 };
 
 // World objects placed in the field (AssetSetter.java)
@@ -59,7 +63,14 @@ export const OBJECT_PLACEMENTS = [
   { type: "Door", col: 27, row: 24 },
   { type: "Chest", col: 28, row: 25 },
   { type: "Boots", col: 21, row: 40 },
+  { type: "Axe", col: 15, row: 30 },
+  { type: "Shield", col: 35, row: 15 },
 ];
+
+// Ticks (at FPS) a Shield pickup's temporary invincibility lasts. Much
+// longer than PLAYER_INVINCIBLE_TICKS (the post-hit grace period) so it
+// reads as a deliberate power-up rather than incidental i-frames.
+export const SHIELD_INVINCIBLE_TICKS = 300;
 
 export const DEFAULT_PLAYER_TILE = [23, 21];
 

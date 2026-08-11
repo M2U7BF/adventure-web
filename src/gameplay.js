@@ -1,4 +1,4 @@
-import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, PLAYER_INVINCIBLE_TICKS } from "./constants.js";
+import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, PLAYER_INVINCIBLE_TICKS, ROCK_TILE, GRASS_TILE, SHIELD_INVINCIBLE_TICKS } from "./constants.js";
 import { checkTileCollision, checkObjectCollision, checkEnemyContact } from "./collision.js";
 
 const MESSAGE_DURATION_TICKS = 30;
@@ -57,12 +57,26 @@ function pickUpObject(state, index) {
       sfx.bgm.stop();
       sfx.fanfare.play();
       break;
+    case "Axe":
+      sfx.powerup.play();
+      player.hasAxeUpgrade = true;
+      obj.removed = true;
+      showMessage(state, "斧をアップグレードした！岩も壊せる");
+      break;
+    case "Shield":
+      sfx.powerup.play();
+      player.invincibleTicks = Math.max(player.invincibleTicks, SHIELD_INVINCIBLE_TICKS);
+      obj.removed = true;
+      showMessage(state, "シールドで一定時間無敵になった！");
+      break;
   }
 }
 
 // Chops down the destructible obstacle (tree/bush) directly in front of the
 // player, if any, turning its tile into the tile named by its
-// `destructibleTo` definition (see constants.js#TILE_DEFS).
+// `destructibleTo` definition (see constants.js#TILE_DEFS). Rocks have no
+// `destructibleTo` and can only be chopped once the player has the Axe
+// upgrade (see the "Axe" case in pickUpObject above).
 function chopTile(state) {
   const player = state.player;
   const [dCol, dRow] = DIRECTION_OFFSET[player.direction];
@@ -74,6 +88,15 @@ function chopTile(state) {
   if (col < 0 || col >= MAX_WORLD_COL || row < 0 || row >= MAX_WORLD_ROW) return;
 
   const tileIndex = state.mapTileNum[col][row];
+
+  if (tileIndex === ROCK_TILE) {
+    if (!player.hasAxeUpgrade) return;
+    state.mapTileNum[col][row] = GRASS_TILE;
+    state.sfx.chop.play();
+    showMessage(state, "岩を砕いた");
+    return;
+  }
+
   const tileDef = state.tiles[tileIndex];
   if (!tileDef || tileDef.destructibleTo === undefined) return;
 

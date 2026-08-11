@@ -7,6 +7,7 @@ export function createPlayer() {
     speed: 8,
     direction: "down",
     hasKey: 0,
+    hasAxeUpgrade: false,
     hp: PLAYER_MAX_HP,
     maxHp: PLAYER_MAX_HP,
     invincibleTicks: 0,
