@@ -69,6 +69,29 @@ export function checkTileCollision(entity, world) {
   }
 }
 
+// Returns the index of the enemy currently overlapping the player's hitbox,
+// or -1. Unlike checkObjectCollision this checks the entities' *current*
+// position (no lookahead) since enemies move independently of the player.
+export function checkEnemyContact(player, enemies) {
+  const p = {
+    x: player.worldX + player.solidArea.x,
+    y: player.worldY + player.solidArea.y,
+    width: player.solidArea.width,
+    height: player.solidArea.height,
+  };
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    const box = {
+      x: e.worldX + e.solidArea.x,
+      y: e.worldY + e.solidArea.y,
+      width: e.solidArea.width,
+      height: e.solidArea.height,
+    };
+    if (intersects(p, box)) return i;
+  }
+  return -1;
+}
+
 // Mirrors CollisionChecker.checkObject: returns the index of the world object
 // the entity is (about to be) touching in its current direction, or -1.
 export function checkObjectCollision(entity, worldObjects) {

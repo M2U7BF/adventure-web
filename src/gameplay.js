@@ -1,5 +1,5 @@
-import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS } from "./constants.js";
-import { checkTileCollision, checkObjectCollision } from "./collision.js";
+import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, PLAYER_INVINCIBLE_TICKS } from "./constants.js";
+import { checkTileCollision, checkObjectCollision, checkEnemyContact } from "./collision.js";
 
 const MESSAGE_DURATION_TICKS = 30;
 const DIRECTION_OFFSET = {
@@ -8,6 +8,10 @@ const DIRECTION_OFFSET = {
   left: [-1, 0],
   right: [1, 0],
 };
+
+function randInt(min, max) {
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
 
 function showMessage(state, text) {
   state.message = text;
@@ -123,9 +127,68 @@ function tickMessage(state) {
   }
 }
 
+// Simple wander AI: walk in the current direction until blocked or a random
+// timer runs out, then pick a new random direction. Reuses checkTileCollision
+// so enemies respect the same solid tiles as the player.
+function updateEnemies(state) {
+  for (const enemy of state.enemies) {
+    enemy.collisionOn = false;
+    checkTileCollision(enemy, state);
+
+    enemy.wanderTicks--;
+    if (enemy.wanderTicks <= 0 || enemy.collisionOn) {
+      const dirs = ["up", "down", "left", "right"];
+      enemy.direction = dirs[randInt(0, 3)];
+      enemy.wanderTicks = randInt(45, 150);
+    }
+
+    if (!enemy.collisionOn) {
+      const [dCol, dRow] = DIRECTION_OFFSET[enemy.direction];
+      enemy.worldX += dCol * enemy.speed;
+      enemy.worldY += dRow * enemy.speed;
+    }
+  }
+}
+
+// Applies contact damage/knockback and triggers game over at 0 HP (mirrors
+// the intent of Player.hp in the original game's later revisions).
+function handleEnemyContact(state) {
+  const player = state.player;
+
+  if (player.invincibleTicks > 0) {
+    player.invincibleTicks--;
+    return;
+  }
+
+  const index = checkEnemyContact(player, state.enemies);
+  if (index < 0) return;
+
+  const enemy = state.enemies[index];
+  player.hp -= ENEMY_CONTACT_DAMAGE;
+  player.invincibleTicks = PLAYER_INVINCIBLE_TICKS;
+  showMessage(state, "ダメージを受けた！");
+
+  // Knock the player straight back away from the enemy that hit them.
+  const dx = player.worldX - enemy.worldX;
+  const dy = player.worldY - enemy.worldY;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    player.worldX += Math.sign(dx || 1) * ENEMY_KNOCKBACK;
+  } else {
+    player.worldY += Math.sign(dy || 1) * ENEMY_KNOCKBACK;
+  }
+  player.worldX = Math.max(TILE_SIZE, Math.min((MAX_WORLD_COL - 2) * TILE_SIZE, player.worldX));
+  player.worldY = Math.max(TILE_SIZE, Math.min((MAX_WORLD_ROW - 2) * TILE_SIZE, player.worldY));
+
+  if (player.hp <= 0) {
+    player.hp = 0;
+    state.gameOver = true;
+    state.sfx.bgm.stop();
+  }
+}
+
 // Advances the simulation by one fixed timestep (mirrors Player.update).
 export function update(state) {
-  if (state.gameFinished) return;
+  if (state.gameFinished || state.gameOver) return;
 
   const player = state.player;
   player.collisionOn = false;
@@ -134,6 +197,8 @@ export function update(state) {
 
   movePlayer(state);
   tickAnimation(state);
+  updateEnemies(state);
+  handleEnemyContact(state);
 
   if (state.actionQueued) {
     chopTile(state);

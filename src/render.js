@@ -38,8 +38,41 @@ function drawObjects(ctx, state) {
 
 function drawPlayer(ctx, state) {
   const { player } = state;
+  // Blink while briefly invincible after taking a hit.
+  if (player.invincibleTicks > 0 && Math.floor(player.invincibleTicks / 4) % 2 === 0) return;
   const sprite = player.sprites[player.direction][player.animFrame];
   ctx.drawImage(sprite, player.screenX, player.screenY, TILE_SIZE, TILE_SIZE);
+}
+
+function drawEnemies(ctx, state) {
+  const { player, enemies } = state;
+  for (const enemy of enemies) {
+    if (!isOnScreen(enemy.worldX, enemy.worldY, player)) continue;
+    const screenX = enemy.worldX - player.worldX + player.screenX;
+    const screenY = enemy.worldY - player.worldY + player.screenY;
+    const cx = screenX + TILE_SIZE / 2;
+    const cy = screenY + TILE_SIZE / 2;
+    const r = TILE_SIZE * 0.32;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = "#b03a3a";
+    ctx.fill();
+    ctx.strokeStyle = "#5a1414";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.35, cy - r * 0.2, r * 0.22, 0, Math.PI * 2);
+    ctx.arc(cx + r * 0.35, cy - r * 0.2, r * 0.22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.35, cy - r * 0.2, r * 0.1, 0, Math.PI * 2);
+    ctx.arc(cx + r * 0.35, cy - r * 0.2, r * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 function strokedText(ctx, text, x, y) {
@@ -76,6 +109,32 @@ function drawFinishedUI(ctx, state) {
   ctx.textAlign = "left";
 }
 
+function drawHpBar(ctx, state) {
+  const { player } = state;
+  const panelWidth = 24 + player.maxHp * 26;
+  panel(ctx, 12, 70, panelWidth, 40);
+  for (let i = 0; i < player.maxHp; i++) {
+    const cx = 12 + 22 + i * 26;
+    const cy = 70 + 20;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+    ctx.fillStyle = i < player.hp ? "#e04a4a" : "rgba(255,255,255,0.15)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.6)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
+function drawGameOverUI(ctx, state) {
+  ctx.textAlign = "center";
+  ctx.font = "bold 64px Arial";
+  strokedText(ctx, "GAME OVER", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+  ctx.font = "24px Arial";
+  strokedText(ctx, "生き延びた時間 : " + state.playTime.toFixed(1), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE);
+  ctx.textAlign = "left";
+}
+
 function drawHud(ctx, state) {
   ctx.textAlign = "left";
 
@@ -84,6 +143,8 @@ function drawHud(ctx, state) {
   ctx.drawImage(state.keyIcon, 20, 18, 36, 36);
   ctx.font = "bold 24px Arial";
   strokedText(ctx, "x " + state.player.hasKey, 66, 44);
+
+  drawHpBar(ctx, state);
 
   // Timer pill (top-right).
   const timeText = "Time : " + state.playTime.toFixed(1);
@@ -106,19 +167,26 @@ function drawHud(ctx, state) {
   }
 }
 
-// Renders one frame. Returns true once the finished screen has been drawn,
-// signalling the caller to stop the loop and show the "play again" overlay.
+// Renders one frame. Returns "finished"/"gameover" once the corresponding
+// end screen has been drawn, signalling the caller to stop the loop and show
+// the matching overlay; otherwise returns null.
 export function draw(ctx, state) {
   ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   drawTiles(ctx, state);
   drawObjects(ctx, state);
+  drawEnemies(ctx, state);
   drawPlayer(ctx, state);
+
+  if (state.gameOver) {
+    drawGameOverUI(ctx, state);
+    return "gameover";
+  }
 
   if (state.gameFinished) {
     drawFinishedUI(ctx, state);
-    return true;
+    return "finished";
   }
 
   drawHud(ctx, state);
-  return false;
+  return null;
 }
