@@ -110,6 +110,16 @@ export const SFX_SRC = {
   chop: { src: "assets/sounds/coin2.mp3" },
 };
 
+// Canonical direction list and their (col, row) step vectors, shared by
+// gameplay.js (player/enemy movement) and collision.js (lookahead checks).
+export const DIRECTIONS = ["up", "down", "left", "right"];
+export const DIRECTION_OFFSETS = {
+  up: [0, -1],
+  down: [0, 1],
+  left: [-1, 0],
+  right: [1, 0],
+};
+
 export const KEY_MAP = {
   ArrowUp: "up", KeyW: "up",
   ArrowDown: "down", KeyS: "down",

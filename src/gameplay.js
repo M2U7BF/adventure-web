@@ -1,17 +1,8 @@
-import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, PLAYER_INVINCIBLE_TICKS, ROCK_TILE, GRASS_TILE, SHIELD_INVINCIBLE_TICKS } from "./constants.js";
+import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, PLAYER_INVINCIBLE_TICKS, ROCK_TILE, GRASS_TILE, SHIELD_INVINCIBLE_TICKS, DIRECTIONS, DIRECTION_OFFSETS } from "./constants.js";
 import { checkTileCollision, checkObjectCollision, checkEnemyContact } from "./collision.js";
+import { randInt } from "./random.js";
 
 const MESSAGE_DURATION_TICKS = 30;
-const DIRECTION_OFFSET = {
-  up: [0, -1],
-  down: [0, 1],
-  left: [-1, 0],
-  right: [1, 0],
-};
-
-function randInt(min, max) {
-  return min + Math.floor(Math.random() * (max - min + 1));
-}
 
 function showMessage(state, text) {
   state.message = text;
@@ -79,7 +70,7 @@ function pickUpObject(state, index) {
 // upgrade (see the "Axe" case in pickUpObject above).
 function chopTile(state) {
   const player = state.player;
-  const [dCol, dRow] = DIRECTION_OFFSET[player.direction];
+  const [dCol, dRow] = DIRECTION_OFFSETS[player.direction];
   const playerCol = Math.floor((player.worldX + player.solidArea.x + player.solidArea.width / 2) / TILE_SIZE);
   const playerRow = Math.floor((player.worldY + player.solidArea.y + player.solidArea.height / 2) / TILE_SIZE);
   const col = playerCol + dCol;
@@ -107,22 +98,18 @@ function chopTile(state) {
 
 function movePlayer(state) {
   const player = state.player;
-  const { keysHeld } = state;
   player.isMoving = false;
 
-  if (keysHeld.has("up")) {
-    player.direction = "up";
-    if (!player.collisionOn) { player.worldY -= player.speed; player.isMoving = true; }
-  } else if (keysHeld.has("down")) {
-    player.direction = "down";
-    if (!player.collisionOn) { player.worldY += player.speed; player.isMoving = true; }
-  } else if (keysHeld.has("left")) {
-    player.direction = "left";
-    if (!player.collisionOn) { player.worldX -= player.speed; player.isMoving = true; }
-  } else if (keysHeld.has("right")) {
-    player.direction = "right";
-    if (!player.collisionOn) { player.worldX += player.speed; player.isMoving = true; }
-  }
+  const direction = DIRECTIONS.find((d) => state.keysHeld.has(d));
+  if (!direction) return;
+
+  player.direction = direction;
+  if (player.collisionOn) return;
+
+  const [dCol, dRow] = DIRECTION_OFFSETS[direction];
+  player.worldX += dCol * player.speed;
+  player.worldY += dRow * player.speed;
+  player.isMoving = true;
 }
 
 // Alternates the player's walk-cycle frame while moving; holds frame 0
@@ -160,13 +147,12 @@ function updateEnemies(state) {
 
     enemy.wanderTicks--;
     if (enemy.wanderTicks <= 0 || enemy.collisionOn) {
-      const dirs = ["up", "down", "left", "right"];
-      enemy.direction = dirs[randInt(0, 3)];
+      enemy.direction = DIRECTIONS[randInt(0, DIRECTIONS.length - 1)];
       enemy.wanderTicks = randInt(45, 150);
     }
 
     if (!enemy.collisionOn) {
-      const [dCol, dRow] = DIRECTION_OFFSET[enemy.direction];
+      const [dCol, dRow] = DIRECTION_OFFSETS[enemy.direction];
       enemy.worldX += dCol * enemy.speed;
       enemy.worldY += dRow * enemy.speed;
     }

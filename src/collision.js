@@ -1,4 +1,4 @@
-import { TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW } from "./constants.js";
+import { TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, DIRECTION_OFFSETS } from "./constants.js";
 import { intersects } from "./geometry.js";
 
 // Mirrors CollisionChecker.checkTile: mutates entity.collisionOn / nudges the
@@ -69,25 +69,33 @@ export function checkTileCollision(entity, world) {
   }
 }
 
+// Entity's current hitbox in world space, as a plain {x, y, width, height}
+// rectangle.
+function worldBox(entity) {
+  return {
+    x: entity.worldX + entity.solidAreaDefaultX,
+    y: entity.worldY + entity.solidAreaDefaultY,
+    width: entity.solidArea.width,
+    height: entity.solidArea.height,
+  };
+}
+
+// Entity's hitbox one step ahead in its current facing direction.
+function projectedBox(entity) {
+  const [dCol, dRow] = DIRECTION_OFFSETS[entity.direction];
+  const box = worldBox(entity);
+  box.x += dCol * entity.speed;
+  box.y += dRow * entity.speed;
+  return box;
+}
+
 // Returns the index of the enemy currently overlapping the player's hitbox,
 // or -1. Unlike checkObjectCollision this checks the entities' *current*
 // position (no lookahead) since enemies move independently of the player.
 export function checkEnemyContact(player, enemies) {
-  const p = {
-    x: player.worldX + player.solidArea.x,
-    y: player.worldY + player.solidArea.y,
-    width: player.solidArea.width,
-    height: player.solidArea.height,
-  };
+  const playerBox = worldBox(player);
   for (let i = 0; i < enemies.length; i++) {
-    const e = enemies[i];
-    const box = {
-      x: e.worldX + e.solidArea.x,
-      y: e.worldY + e.solidArea.y,
-      width: e.solidArea.width,
-      height: e.solidArea.height,
-    };
-    if (intersects(p, box)) return i;
+    if (intersects(playerBox, worldBox(enemies[i]))) return i;
   }
   return -1;
 }
@@ -95,41 +103,17 @@ export function checkEnemyContact(player, enemies) {
 // Mirrors CollisionChecker.checkObject: returns the index of the world object
 // the entity is (about to be) touching in its current direction, or -1.
 export function checkObjectCollision(entity, worldObjects) {
+  const entityBox = projectedBox(entity);
   let index = -1;
 
   for (let i = 0; i < worldObjects.length; i++) {
     const obj = worldObjects[i];
     if (!obj || obj.removed) continue;
 
-    entity.solidArea.x = entity.worldX + entity.solidArea.x;
-    entity.solidArea.y = entity.worldY + entity.solidArea.y;
-    obj.solidArea.x = obj.worldX + obj.solidArea.x;
-    obj.solidArea.y = obj.worldY + obj.solidArea.y;
+    if (!intersects(entityBox, worldBox(obj))) continue;
 
-    switch (entity.direction) {
-      case "up":
-        entity.solidArea.y -= entity.speed;
-        break;
-      case "down":
-        entity.solidArea.y += entity.speed;
-        break;
-      case "left":
-        entity.solidArea.x -= entity.speed;
-        break;
-      case "right":
-        entity.solidArea.x += entity.speed;
-        break;
-    }
-
-    if (intersects(entity.solidArea, obj.solidArea)) {
-      if (obj.collision) entity.collisionOn = true;
-      index = i;
-    }
-
-    entity.solidArea.x = entity.solidAreaDefaultX;
-    entity.solidArea.y = entity.solidAreaDefaultY;
-    obj.solidArea.x = obj.solidAreaDefaultX;
-    obj.solidArea.y = obj.solidAreaDefaultY;
+    if (obj.collision) entity.collisionOn = true;
+    index = i;
   }
 
   return index;
