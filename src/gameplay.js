@@ -13,6 +13,31 @@ function randInt(min, max) {
   return min + Math.floor(Math.random() * (max - min + 1));
 }
 
+const BEST_TIME_KEY = "adventure-best-time";
+
+// Persists the clear time to localStorage and flags whether it's a new
+// personal best, so render.js can show a "New Best!" callout.
+function recordBestTime(state) {
+  let best = null;
+  try {
+    const stored = localStorage.getItem(BEST_TIME_KEY);
+    best = stored ? Number(stored) : null;
+  } catch {
+    best = null;
+  }
+
+  state.isNewBest = best === null || state.playTime < best;
+  state.bestTime = state.isNewBest ? state.playTime : best;
+
+  if (state.isNewBest) {
+    try {
+      localStorage.setItem(BEST_TIME_KEY, String(state.playTime));
+    } catch {
+      // localStorage unavailable (e.g. private mode); best time just won't persist.
+    }
+  }
+}
+
 function showMessage(state, text) {
   state.message = text;
   state.messageOn = true;
@@ -56,6 +81,7 @@ function pickUpObject(state, index) {
       state.gameFinished = true;
       sfx.bgm.stop();
       sfx.fanfare.play();
+      recordBestTime(state);
       break;
   }
 }
