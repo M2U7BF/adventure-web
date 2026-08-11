@@ -103,6 +103,9 @@ function drawFinishedUI(ctx, state) {
   ctx.font = "40px Arial";
   strokedText(ctx, "you got a treasure", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - TILE_SIZE * 3);
   strokedText(ctx, "Your time is : " + state.playTime.toFixed(1), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 3);
+  if (state.bestTime !== null) {
+    strokedText(ctx, "ベストタイム : " + state.bestTime.toFixed(1) + (state.isNewBest ? "  (New Best!)" : ""), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 3 + 34);
+  }
 
   ctx.font = "bold 64px Arial";
   strokedText(ctx, "Congratulations!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 2);
