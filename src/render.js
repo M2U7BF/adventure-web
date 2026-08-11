@@ -135,6 +135,54 @@ function drawGameOverUI(ctx, state) {
   ctx.textAlign = "left";
 }
 
+const MINIMAP_SIZE = 120;
+const MINIMAP_MARGIN = 12;
+const MINIMAP_PADDING = 8;
+const MINIMAP_OBJECT_COLORS = {
+  Key: "#e8d24a",
+  Door: "#8a5a2a",
+  Chest: "#f0b429",
+  Boots: "#4ac9e8",
+};
+
+// Bottom-right panel showing the player and every uncollected world object's
+// position, scaled down from world pixel space, so the 50x50 field is easier
+// to navigate without memorizing the (randomly generated) layout.
+function drawMinimap(ctx, state) {
+  const { player, worldObjects } = state;
+  const x = SCREEN_WIDTH - MINIMAP_SIZE - MINIMAP_MARGIN;
+  const y = SCREEN_HEIGHT - MINIMAP_SIZE - MINIMAP_MARGIN;
+  panel(ctx, x, y, MINIMAP_SIZE, MINIMAP_SIZE, 8);
+
+  const worldPxWidth = MAX_WORLD_COL * TILE_SIZE;
+  const worldPxHeight = MAX_WORLD_ROW * TILE_SIZE;
+  const innerSize = MINIMAP_SIZE - MINIMAP_PADDING * 2;
+  const scaleX = innerSize / worldPxWidth;
+  const scaleY = innerSize / worldPxHeight;
+  const toMinimap = (worldX, worldY) => [
+    x + MINIMAP_PADDING + worldX * scaleX,
+    y + MINIMAP_PADDING + worldY * scaleY,
+  ];
+
+  for (const obj of worldObjects) {
+    if (!obj || obj.removed) continue;
+    const [mx, my] = toMinimap(obj.worldX, obj.worldY);
+    ctx.beginPath();
+    ctx.arc(mx, my, 3, 0, Math.PI * 2);
+    ctx.fillStyle = MINIMAP_OBJECT_COLORS[obj.type] || "#ffffff";
+    ctx.fill();
+  }
+
+  const [px, py] = toMinimap(player.worldX, player.worldY);
+  ctx.beginPath();
+  ctx.arc(px, py, 4, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
 function drawHud(ctx, state) {
   ctx.textAlign = "left";
 
@@ -145,6 +193,7 @@ function drawHud(ctx, state) {
   strokedText(ctx, "x " + state.player.hasKey, 66, 44);
 
   drawHpBar(ctx, state);
+  drawMinimap(ctx, state);
 
   // Timer pill (top-right).
   const timeText = "Time : " + state.playTime.toFixed(1);
