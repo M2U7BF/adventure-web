@@ -8,6 +8,7 @@ import { draw } from "./render.js";
 import { setupInput } from "./input.js";
 import { GameLoop } from "./loop.js";
 import { Overlay } from "./overlay.js";
+import { randInt } from "./random.js";
 
 const canvas = document.getElementById("game");
 canvas.width = SCREEN_WIDTH;
@@ -77,10 +78,6 @@ async function loadWorld() {
   state.worldObjects = OBJECT_PLACEMENTS.map(makeObjectInstance);
   state.keyIcon = OBJECT_DEFS.Key.img;
   state.enemies = spawnEnemies(state, DEFAULT_PLAYER_TILE, ENEMY_COUNT);
-}
-
-function randInt(min, max) {
-  return min + Math.floor(Math.random() * (max - min + 1));
 }
 
 // Scatters enemies on open ground, away from the player's spawn tile, so the

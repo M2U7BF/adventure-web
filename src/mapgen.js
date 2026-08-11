@@ -13,6 +13,7 @@ import {
   ROCK_TILE,
   WALL_TILE,
 } from "./constants.js";
+import { randInt } from "./random.js";
 
 // ---------------------------------------------------------------------
 // Procedural map generation. Produces a fresh MAX_WORLD_COL x MAX_WORLD_ROW
@@ -28,10 +29,6 @@ function makeGrid(fill) {
     grid.push(new Array(MAX_WORLD_ROW).fill(fill));
   }
   return grid;
-}
-
-function randInt(min, max) {
-  return min + Math.floor(Math.random() * (max - min + 1));
 }
 
 // "Drunkard's walk" blob painter: wanders from a random interior point,

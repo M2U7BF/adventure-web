@@ -173,9 +173,9 @@ function drawFinishedUI(ctx, state) {
 function drawHpBar(ctx, state) {
   const { player } = state;
   const panelWidth = 24 + player.maxHp * 26;
-  panel(ctx, 12, 70, panelWidth, 40);
+  panel(ctx, HUD_MARGIN, 70, panelWidth, 40);
   for (let i = 0; i < player.maxHp; i++) {
-    const cx = 12 + 22 + i * 26;
+    const cx = HUD_MARGIN + 22 + i * 26;
     const cy = 70 + 20;
     ctx.beginPath();
     ctx.arc(cx, cy, 10, 0, Math.PI * 2);
@@ -196,8 +196,9 @@ function drawGameOverUI(ctx, state) {
   ctx.textAlign = "left";
 }
 
+const HUD_MARGIN = 12;
 const MINIMAP_SIZE = 120;
-const MINIMAP_MARGIN = 12;
+const MINIMAP_MARGIN = HUD_MARGIN;
 const MINIMAP_PADDING = 8;
 const MINIMAP_OBJECT_COLORS = {
   Key: "#e8d24a",
@@ -248,7 +249,7 @@ function drawHud(ctx, state) {
   ctx.textAlign = "left";
 
   // Key count pill (top-left).
-  panel(ctx, 12, 10, 132, 52);
+  panel(ctx, HUD_MARGIN, 10, 132, 52);
   ctx.drawImage(state.keyIcon, 20, 18, 36, 36);
   ctx.font = "bold 24px Arial";
   strokedText(ctx, "x " + state.player.hasKey, 66, 44);
@@ -261,7 +262,7 @@ function drawHud(ctx, state) {
   ctx.font = "bold 24px Arial";
   const timeWidth = ctx.measureText(timeText).width;
   const timePanelWidth = timeWidth + 32;
-  const timePanelX = SCREEN_WIDTH - timePanelWidth - 12;
+  const timePanelX = SCREEN_WIDTH - timePanelWidth - HUD_MARGIN;
   panel(ctx, timePanelX, 10, timePanelWidth, 52);
   strokedText(ctx, timeText, timePanelX + 16, 44);
 
