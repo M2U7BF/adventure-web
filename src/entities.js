@@ -1,4 +1,4 @@
-import { TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_PLAYER_TILE, OBJECT_DEFS } from "./constants.js";
+import { TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_PLAYER_TILE, OBJECT_DEFS, PLAYER_MAX_HP, ENEMY_SPEED } from "./constants.js";
 
 export function createPlayer() {
   return {
@@ -7,6 +7,9 @@ export function createPlayer() {
     speed: 8,
     direction: "down",
     hasKey: 0,
+    hp: PLAYER_MAX_HP,
+    maxHp: PLAYER_MAX_HP,
+    invincibleTicks: 0,
     solidArea: { x: 8, y: 16, width: 32, height: 32 },
     solidAreaDefaultX: 8,
     solidAreaDefaultY: 16,
@@ -17,6 +20,22 @@ export function createPlayer() {
     isMoving: false,
     animTimer: 0,
     animFrame: 0,
+  };
+}
+
+// Wandering hazard entity (mirrors Player's movement fields closely enough
+// to be reused by collision.js#checkTileCollision).
+export function createEnemy(col, row) {
+  return {
+    worldX: col * TILE_SIZE,
+    worldY: row * TILE_SIZE,
+    speed: ENEMY_SPEED,
+    direction: ["up", "down", "left", "right"][Math.floor(Math.random() * 4)],
+    solidArea: { x: 8, y: 8, width: 32, height: 32 },
+    solidAreaDefaultX: 8,
+    solidAreaDefaultY: 8,
+    collisionOn: false,
+    wanderTicks: 0,
   };
 }
 

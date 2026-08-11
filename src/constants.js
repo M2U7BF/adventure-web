@@ -63,6 +63,17 @@ export const OBJECT_PLACEMENTS = [
 
 export const DEFAULT_PLAYER_TILE = [23, 21];
 
+// ---------------------------------------------------------------------
+// Enemies / HP
+// ---------------------------------------------------------------------
+export const PLAYER_MAX_HP = 5;
+export const ENEMY_COUNT = 6;
+export const ENEMY_SPEED = 2;
+export const ENEMY_CONTACT_DAMAGE = 1;
+export const ENEMY_KNOCKBACK = TILE_SIZE * 2;
+// Ticks (at FPS) the player is immune to further damage after being hit.
+export const PLAYER_INVINCIBLE_TICKS = 60;
+
 // Two frames per direction: [idle/step-1, step-2]. render.js alternates
 // between them while the player is moving to animate the walk cycle.
 export const PLAYER_SPRITE_SRC = {

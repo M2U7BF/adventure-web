@@ -6,6 +6,7 @@ export function createInitialState() {
     tiles: [],
     mapTileNum: [],
     worldObjects: [],
+    enemies: [],
     player: null,
     keyIcon: null,
     sfx: null,
@@ -17,5 +18,6 @@ export function createInitialState() {
     messageCounter: 0,
     playTime: 0,
     gameFinished: false,
+    gameOver: false,
   };
 }

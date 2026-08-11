@@ -1,7 +1,7 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, TILE_DEFS, OBJECT_DEFS, OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE, PLAYER_SPRITE_SRC, SFX_SRC } from "./constants.js";
+import { SCREEN_WIDTH, SCREEN_HEIGHT, TILE_DEFS, OBJECT_DEFS, OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE, PLAYER_SPRITE_SRC, SFX_SRC, GRASS_TILE, MAX_WORLD_COL, MAX_WORLD_ROW, ENEMY_COUNT } from "./constants.js";
 import { loadImage, SfxPlayer } from "./assets.js";
 import { generateMap } from "./mapgen.js";
-import { createPlayer, makeObjectInstance } from "./entities.js";
+import { createPlayer, makeObjectInstance, createEnemy } from "./entities.js";
 import { createInitialState } from "./state.js";
 import { update } from "./gameplay.js";
 import { draw } from "./render.js";
@@ -26,9 +26,13 @@ const state = createInitialState();
 const loop = new GameLoop(
   () => update(state),
   () => {
-    if (draw(ctx, state)) {
+    const result = draw(ctx, state);
+    if (result === "finished") {
       loop.stop();
       overlay.showFinished();
+    } else if (result === "gameover") {
+      loop.stop();
+      overlay.showGameOver();
     }
   }
 );
@@ -46,6 +50,29 @@ async function loadWorld() {
   });
   state.worldObjects = OBJECT_PLACEMENTS.map(makeObjectInstance);
   state.keyIcon = OBJECT_DEFS.Key.img;
+  state.enemies = spawnEnemies(state, DEFAULT_PLAYER_TILE, ENEMY_COUNT);
+}
+
+function randInt(min, max) {
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+// Scatters enemies on open ground, away from the player's spawn tile, so the
+// player isn't ambushed the instant the game starts.
+function spawnEnemies(state, playerTile, count) {
+  const enemies = [];
+  let attempts = 0;
+  while (enemies.length < count && attempts < 1000) {
+    attempts++;
+    const col = randInt(2, MAX_WORLD_COL - 3);
+    const row = randInt(2, MAX_WORLD_ROW - 3);
+    if (state.mapTileNum[col][row] !== GRASS_TILE) continue;
+    const dx = col - playerTile[0];
+    const dy = row - playerTile[1];
+    if (dx * dx + dy * dy < 36) continue;
+    enemies.push(createEnemy(col, row));
+  }
+  return enemies;
 }
 
 async function loadPlayer() {
@@ -83,7 +110,7 @@ async function boot() {
 }
 
 function start() {
-  if (state.gameFinished) {
+  if (state.gameFinished || state.gameOver) {
     location.reload();
     return;
   }

@@ -27,6 +27,15 @@ export class Overlay {
     this.root.style.display = "flex";
   }
 
+  showGameOver() {
+    this.root.classList.remove("finished");
+    this.title.textContent = "GAME OVER";
+    this.text.textContent = "敵にやられてしまった…";
+    this.button.hidden = false;
+    this.button.textContent = "もう一度挑戦する";
+    this.root.style.display = "flex";
+  }
+
   get isStartVisible() {
     return !this.button.hidden;
   }
