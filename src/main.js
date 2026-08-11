@@ -1,7 +1,7 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, TILE_DEFS, OBJECT_DEFS, OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE, PLAYER_SPRITE_SRC, SFX_SRC, GRASS_TILE, MAX_WORLD_COL, MAX_WORLD_ROW, ENEMY_COUNT } from "./constants.js";
+import { SCREEN_WIDTH, SCREEN_HEIGHT, TILE_DEFS, OBJECT_DEFS, OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE, PLAYER_SPRITE_SRC, SFX_SRC, GRASS_TILE, MAX_WORLD_COL, MAX_WORLD_ROW, ENEMY_COUNT, HIDDEN_ITEM_COUNT } from "./constants.js";
 import { loadImage, SfxPlayer } from "./assets.js";
-import { generateMap } from "./mapgen.js";
-import { createPlayer, makeObjectInstance, createEnemy } from "./entities.js";
+import { generateMap, placeHiddenItems } from "./mapgen.js";
+import { createPlayer, makeObjectInstance, makeHiddenItemInstance, createEnemy } from "./entities.js";
 import { createInitialState } from "./state.js";
 import { update } from "./gameplay.js";
 import { draw } from "./render.js";
@@ -40,16 +40,25 @@ const loop = new GameLoop(
 async function loadWorld() {
   const tileImgs = await Promise.all(TILE_DEFS.map((t) => loadImage(t.src)));
 
+  const hiddenTiles = placeHiddenItems(HIDDEN_ITEM_COUNT, DEFAULT_PLAYER_TILE, OBJECT_PLACEMENTS);
+  const hiddenPlacements = hiddenTiles.map((t) => ({ type: "Hidden", col: t.col, row: t.row }));
+  const allPlacements = [...OBJECT_PLACEMENTS, ...hiddenPlacements];
+
   state.tiles = TILE_DEFS.map((def, i) => ({ img: tileImgs[i], collision: def.collision, destructibleTo: def.destructibleTo }));
-  state.mapTileNum = generateMap(OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE);
+  state.mapTileNum = generateMap(allPlacements, DEFAULT_PLAYER_TILE);
 
   const objTypeNames = Object.keys(OBJECT_DEFS);
   const objImgs = await Promise.all(objTypeNames.map((t) => loadImage(OBJECT_DEFS[t].src)));
   objTypeNames.forEach((t, i) => {
     OBJECT_DEFS[t].img = objImgs[i];
   });
-  state.worldObjects = OBJECT_PLACEMENTS.map(makeObjectInstance);
+  state.worldObjects = [
+    ...OBJECT_PLACEMENTS.map(makeObjectInstance),
+    ...hiddenTiles.map((t) => makeHiddenItemInstance(t.col, t.row)),
+  ];
   state.keyIcon = OBJECT_DEFS.Key.img;
+  state.hiddenTotal = hiddenTiles.length;
+  state.hiddenCollected = 0;
   state.enemies = spawnEnemies(state, DEFAULT_PLAYER_TILE, ENEMY_COUNT);
 }
 

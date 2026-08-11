@@ -63,6 +63,10 @@ export const OBJECT_PLACEMENTS = [
 
 export const DEFAULT_PLAYER_TILE = [23, 21];
 
+// Number of hidden collectibles scattered on the map each game (see
+// mapgen.js#placeHiddenItems).
+export const HIDDEN_ITEM_COUNT = 5;
+
 // ---------------------------------------------------------------------
 // Enemies / HP
 // ---------------------------------------------------------------------

@@ -19,5 +19,7 @@ export function createInitialState() {
     playTime: 0,
     gameFinished: false,
     gameOver: false,
+    hiddenTotal: 0,
+    hiddenCollected: 0,
   };
 }

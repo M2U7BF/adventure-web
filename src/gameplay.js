@@ -57,6 +57,12 @@ function pickUpObject(state, index) {
       sfx.bgm.stop();
       sfx.fanfare.play();
       break;
+    case "Hidden":
+      sfx.coin.play();
+      obj.removed = true;
+      state.hiddenCollected++;
+      showMessage(state, `隠しアイテムを見つけた！ (${state.hiddenCollected}/${state.hiddenTotal})`);
+      break;
   }
 }
 

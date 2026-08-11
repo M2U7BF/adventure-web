@@ -52,3 +52,20 @@ export function makeObjectInstance(def) {
     removed: false,
   };
 }
+
+// Hidden collectibles have no sprite asset (render.js draws them
+// procedurally) so they're built separately from makeObjectInstance, which
+// depends on an OBJECT_DEFS image entry.
+export function makeHiddenItemInstance(col, row) {
+  return {
+    type: "Hidden",
+    image: null,
+    collision: false,
+    worldX: col * TILE_SIZE,
+    worldY: row * TILE_SIZE,
+    solidArea: { x: 0, y: 0, width: TILE_SIZE, height: TILE_SIZE },
+    solidAreaDefaultX: 0,
+    solidAreaDefaultY: 0,
+    removed: false,
+  };
+}

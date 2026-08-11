@@ -24,6 +24,34 @@ function drawTiles(ctx, state) {
   }
 }
 
+// Hidden collectibles have no sprite asset (see entities.js#makeHiddenItemInstance),
+// so they're drawn as a small gold sparkle instead of an image.
+function drawHiddenItem(ctx, screenX, screenY) {
+  const cx = screenX + TILE_SIZE / 2;
+  const cy = screenY + TILE_SIZE / 2;
+  const r = TILE_SIZE * 0.22;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillStyle = "#ffd54a";
+  ctx.strokeStyle = "#8a6a10";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, -r);
+  ctx.lineTo(r * 0.35, -r * 0.35);
+  ctx.lineTo(r, 0);
+  ctx.lineTo(r * 0.35, r * 0.35);
+  ctx.lineTo(0, r);
+  ctx.lineTo(-r * 0.35, r * 0.35);
+  ctx.lineTo(-r, 0);
+  ctx.lineTo(-r * 0.35, -r * 0.35);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawObjects(ctx, state) {
   const { player, worldObjects } = state;
   for (const obj of worldObjects) {
@@ -32,7 +60,11 @@ function drawObjects(ctx, state) {
 
     const screenX = obj.worldX - player.worldX + player.screenX;
     const screenY = obj.worldY - player.worldY + player.screenY;
-    ctx.drawImage(obj.image, screenX, screenY, TILE_SIZE, TILE_SIZE);
+    if (obj.type === "Hidden") {
+      drawHiddenItem(ctx, screenX, screenY);
+    } else {
+      ctx.drawImage(obj.image, screenX, screenY, TILE_SIZE, TILE_SIZE);
+    }
   }
 }
 
@@ -106,6 +138,14 @@ function drawFinishedUI(ctx, state) {
 
   ctx.font = "bold 64px Arial";
   strokedText(ctx, "Congratulations!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 2);
+
+  if (state.hiddenTotal > 0) {
+    ctx.font = "22px Arial";
+    const hiddenText = state.hiddenCollected >= state.hiddenTotal
+      ? "隠しアイテムを全て発見！"
+      : `隠しアイテム: ${state.hiddenCollected}/${state.hiddenTotal}`;
+    strokedText(ctx, hiddenText, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 4);
+  }
   ctx.textAlign = "left";
 }
 

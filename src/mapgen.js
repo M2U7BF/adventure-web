@@ -152,6 +152,40 @@ function ensureConnectivity(grid, spawn, mustReach) {
   }
 }
 
+const HIDDEN_BORDER_MARGIN = 3;
+const HIDDEN_MIN_SPAWN_DISTANCE = 6;
+const HIDDEN_MIN_SPACING = 4;
+
+function distanceBetween([c1, r1], [c2, r2]) {
+  return Math.hypot(c1 - c2, r1 - r2);
+}
+
+// Picks `count` random tile positions for hidden collectibles, spaced apart
+// from each other, from the player spawn, and from `existingPlacements` (the
+// key/door/chest/boots objects). The caller must fold these positions into
+// generateMap()'s objectPlacements so ensureConnectivity() guarantees they
+// stay reachable.
+export function placeHiddenItems(count, playerTile, existingPlacements) {
+  const placed = existingPlacements.map((o) => [o.col, o.row]);
+  const items = [];
+  for (let i = 0; i < count; i++) {
+    let col, row;
+    let attempts = 0;
+    do {
+      col = randInt(HIDDEN_BORDER_MARGIN, MAX_WORLD_COL - 1 - HIDDEN_BORDER_MARGIN);
+      row = randInt(HIDDEN_BORDER_MARGIN, MAX_WORLD_ROW - 1 - HIDDEN_BORDER_MARGIN);
+      attempts++;
+    } while (
+      attempts < 500 &&
+      (distanceBetween([col, row], playerTile) < HIDDEN_MIN_SPAWN_DISTANCE ||
+        placed.some((p) => distanceBetween([col, row], p) < HIDDEN_MIN_SPACING))
+    );
+    placed.push([col, row]);
+    items.push({ col, row });
+  }
+  return items;
+}
+
 export function generateMap(objectPlacements, playerTile) {
   const grid = makeGrid(GRASS_TILE);
 
