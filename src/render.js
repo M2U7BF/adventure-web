@@ -24,6 +24,55 @@ function drawTiles(ctx, state) {
   }
 }
 
+// Axe/Shield have no sprite asset (see constants.js#OBJECT_DEFS), so they're
+// drawn as a simple canvas icon on a dark badge instead of an image.
+function drawIconObject(ctx, type, screenX, screenY) {
+  const cx = screenX + TILE_SIZE / 2;
+  const cy = screenY + TILE_SIZE / 2;
+  const r = TILE_SIZE * 0.3;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 6, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(10, 12, 20, 0.55)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  if (type === "Axe") {
+    ctx.strokeStyle = "#c9c9c9";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.3, cy - r * 0.8);
+    ctx.lineTo(cx - r * 0.3, cy + r * 0.8);
+    ctx.stroke();
+    ctx.fillStyle = "#9a6b3a";
+    ctx.beginPath();
+    ctx.arc(cx + r * 0.15, cy - r * 0.35, r * 0.55, -Math.PI * 0.65, Math.PI * 0.15);
+    ctx.lineTo(cx - r * 0.3, cy - r * 0.1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#5a3a1a";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  } else if (type === "Shield") {
+    ctx.fillStyle = "#4a90d9";
+    ctx.strokeStyle = "#1c4a7a";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.quadraticCurveTo(cx + r, cy - r * 0.6, cx + r * 0.8, cy + r * 0.1);
+    ctx.quadraticCurveTo(cx + r * 0.5, cy + r * 0.9, cx, cy + r);
+    ctx.quadraticCurveTo(cx - r * 0.5, cy + r * 0.9, cx - r * 0.8, cy + r * 0.1);
+    ctx.quadraticCurveTo(cx - r, cy - r * 0.6, cx, cy - r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawObjects(ctx, state) {
   const { player, worldObjects } = state;
   for (const obj of worldObjects) {
@@ -32,7 +81,11 @@ function drawObjects(ctx, state) {
 
     const screenX = obj.worldX - player.worldX + player.screenX;
     const screenY = obj.worldY - player.worldY + player.screenY;
-    ctx.drawImage(obj.image, screenX, screenY, TILE_SIZE, TILE_SIZE);
+    if (obj.image) {
+      ctx.drawImage(obj.image, screenX, screenY, TILE_SIZE, TILE_SIZE);
+    } else {
+      drawIconObject(ctx, obj.type, screenX, screenY);
+    }
   }
 }
 

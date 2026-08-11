@@ -43,7 +43,9 @@ async function loadWorld() {
   state.tiles = TILE_DEFS.map((def, i) => ({ img: tileImgs[i], collision: def.collision, destructibleTo: def.destructibleTo }));
   state.mapTileNum = generateMap(OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE);
 
-  const objTypeNames = Object.keys(OBJECT_DEFS);
+  // Axe/Shield have no `src` (render.js draws them procedurally instead), so
+  // only load images for the object types that actually have one.
+  const objTypeNames = Object.keys(OBJECT_DEFS).filter((t) => OBJECT_DEFS[t].src);
   const objImgs = await Promise.all(objTypeNames.map((t) => loadImage(OBJECT_DEFS[t].src)));
   objTypeNames.forEach((t, i) => {
     OBJECT_DEFS[t].img = objImgs[i];
