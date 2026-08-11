@@ -152,6 +152,46 @@ function ensureConnectivity(grid, spawn, mustReach) {
   }
 }
 
+// Splits the field into a handful of walled-off "sections" (faces) by
+// drawing full-length wall partitions across the grid, each with one or two
+// narrow gaps carved into it. The gaps are the only way to walk from one
+// section to the next, turning the open field into a light maze while
+// `ensureConnectivity()` still guarantees every section stays reachable.
+function paintSectionWalls(grid, count) {
+  const usedOffsets = [];
+
+  for (let i = 0; i < count; i++) {
+    const vertical = Math.random() < 0.5;
+    const span = vertical ? MAX_WORLD_ROW : MAX_WORLD_COL;
+    const crossSpan = vertical ? MAX_WORLD_COL : MAX_WORLD_ROW;
+
+    let offset;
+    let attempts = 0;
+    do {
+      offset = randInt(6, crossSpan - 7);
+      attempts++;
+    } while (usedOffsets.some((o) => Math.abs(o - offset) < 6) && attempts < 20);
+    usedOffsets.push(offset);
+
+    for (let pos = 1; pos < span - 1; pos++) {
+      if (vertical) grid[offset][pos] = WALL_TILE;
+      else grid[pos][offset] = WALL_TILE;
+    }
+
+    // Carve one or two passable gaps ("面移動できる箇所") through the wall.
+    const gapCount = randInt(1, 2);
+    for (let g = 0; g < gapCount; g++) {
+      const gapStart = randInt(2, span - 4);
+      const gapWidth = randInt(2, 3);
+      for (let w = 0; w < gapWidth; w++) {
+        const pos = Math.min(span - 2, gapStart + w);
+        if (vertical) grid[offset][pos] = GRASS_TILE;
+        else grid[pos][offset] = GRASS_TILE;
+      }
+    }
+  }
+}
+
 export function generateMap(objectPlacements, playerTile) {
   const grid = makeGrid(GRASS_TILE);
 
@@ -164,6 +204,10 @@ export function generateMap(objectPlacements, playerTile) {
     grid[0][row] = TREE_TILE;
     grid[MAX_WORLD_COL - 1][row] = TREE_TILE;
   }
+
+  // Divide the field into a few walled sections, each linked to its
+  // neighbor(s) only through narrow gaps.
+  paintSectionWalls(grid, randInt(2, 3));
 
   // Lakes, then a sandy beach ring around them.
   paintBlobs(grid, WATER_TILE, randInt(3, 5), { steps: randInt(10, 18), radius: () => randInt(1, 3) });
