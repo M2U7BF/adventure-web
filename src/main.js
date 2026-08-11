@@ -1,6 +1,6 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, TILE_DEFS, OBJECT_DEFS, OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE, PLAYER_SPRITE_SRC, SFX_SRC, GRASS_TILE, MAX_WORLD_COL, MAX_WORLD_ROW, ENEMY_COUNT } from "./constants.js";
+import { SCREEN_WIDTH, SCREEN_HEIGHT, TILE_DEFS, OBJECT_DEFS, RANDOM_OBJECT_TYPES, FIXED_OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE, PLAYER_SPRITE_SRC, SFX_SRC, GRASS_TILE, MAX_WORLD_COL, MAX_WORLD_ROW, ENEMY_COUNT } from "./constants.js";
 import { loadImage, SfxPlayer } from "./assets.js";
-import { generateMap } from "./mapgen.js";
+import { generateMap, randomizeObjectPlacements } from "./mapgen.js";
 import { createPlayer, makeObjectInstance, createEnemy } from "./entities.js";
 import { createInitialState } from "./state.js";
 import { update } from "./gameplay.js";
@@ -40,15 +40,17 @@ const loop = new GameLoop(
 async function loadWorld() {
   const tileImgs = await Promise.all(TILE_DEFS.map((t) => loadImage(t.src)));
 
+  const objectPlacements = randomizeObjectPlacements(RANDOM_OBJECT_TYPES, FIXED_OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE);
+
   state.tiles = TILE_DEFS.map((def, i) => ({ img: tileImgs[i], collision: def.collision, destructibleTo: def.destructibleTo }));
-  state.mapTileNum = generateMap(OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE);
+  state.mapTileNum = generateMap(objectPlacements, DEFAULT_PLAYER_TILE);
 
   const objTypeNames = Object.keys(OBJECT_DEFS);
   const objImgs = await Promise.all(objTypeNames.map((t) => loadImage(OBJECT_DEFS[t].src)));
   objTypeNames.forEach((t, i) => {
     OBJECT_DEFS[t].img = objImgs[i];
   });
-  state.worldObjects = OBJECT_PLACEMENTS.map(makeObjectInstance);
+  state.worldObjects = objectPlacements.map(makeObjectInstance);
   state.keyIcon = OBJECT_DEFS.Key.img;
   state.enemies = spawnEnemies(state, DEFAULT_PLAYER_TILE, ENEMY_COUNT);
 }

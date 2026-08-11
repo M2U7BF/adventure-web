@@ -49,15 +49,13 @@ export const OBJECT_DEFS = {
   Boots: { src: "assets/objects/boots.png", collision: false },
 };
 
-// World objects placed in the field (AssetSetter.java)
-export const OBJECT_PLACEMENTS = [
-  { type: "Key", col: 23, row: 7 },
-  { type: "Key", col: 23, row: 40 },
-  { type: "Key", col: 22, row: 40 },
-  { type: "Door", col: 22, row: 7 },
-  { type: "Door", col: 27, row: 22 },
-  { type: "Door", col: 27, row: 24 },
-  { type: "Chest", col: 28, row: 25 },
+// Object types re-rolled to a random position every game (see
+// mapgen.js#randomizeObjectPlacements) so keys/doors/the chest never sit in
+// the same spot twice.
+export const RANDOM_OBJECT_TYPES = ["Key", "Key", "Key", "Door", "Door", "Door", "Chest"];
+
+// Object placements that stay fixed regardless of the random roll above.
+export const FIXED_OBJECT_PLACEMENTS = [
   { type: "Boots", col: 21, row: 40 },
 ];
 
