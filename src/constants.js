@@ -42,30 +42,43 @@ export const TILE_DEFS = [
   { src: "assets/tiles/rock.png", collision: true }, // 9
 ];
 
+// Axe/Shield have no sprite asset (see render.js#drawIconObject, which draws
+// them procedurally), so they're the only entries without a `src`.
 export const OBJECT_DEFS = {
   Key: { src: "assets/objects/key.png", collision: false },
   Door: { src: "assets/objects/door.png", collision: true },
   Chest: { src: "assets/objects/chest.png", collision: false },
   Boots: { src: "assets/objects/boots.png", collision: false },
+  Axe: { collision: false },
+  Shield: { collision: false },
 };
 
-// World objects placed in the field (AssetSetter.java)
-export const OBJECT_PLACEMENTS = [
-  { type: "Key", col: 23, row: 7 },
-  { type: "Key", col: 23, row: 40 },
-  { type: "Key", col: 22, row: 40 },
-  { type: "Door", col: 22, row: 7 },
-  { type: "Door", col: 27, row: 22 },
-  { type: "Door", col: 27, row: 24 },
-  { type: "Chest", col: 28, row: 25 },
+// Object types re-rolled to a random position every game (see
+// mapgen.js#randomizeObjectPlacements) so keys/doors/the chest never sit in
+// the same spot twice.
+export const RANDOM_OBJECT_TYPES = ["Key", "Key", "Key", "Door", "Door", "Door", "Chest"];
+
+// Object placements that stay fixed regardless of the random roll above.
+export const FIXED_OBJECT_PLACEMENTS = [
   { type: "Boots", col: 21, row: 40 },
+  { type: "Axe", col: 15, row: 30 },
+  { type: "Shield", col: 35, row: 15 },
 ];
+
+// Ticks (at FPS) a Shield pickup's temporary invincibility lasts. Much
+// longer than PLAYER_INVINCIBLE_TICKS (the post-hit grace period) so it
+// reads as a deliberate power-up rather than incidental i-frames.
+export const SHIELD_INVINCIBLE_TICKS = 300;
 
 export const DEFAULT_PLAYER_TILE = [23, 21];
 
 // Number of hidden collectibles scattered on the map each game (see
 // mapgen.js#placeHiddenItems).
 export const HIDDEN_ITEM_COUNT = 5;
+
+// localStorage key the best clear time (in seconds, see main.js#recordFinishTime)
+// is persisted under.
+export const BEST_TIME_STORAGE_KEY = "adventure_best_time";
 
 // ---------------------------------------------------------------------
 // Enemies / HP
@@ -97,6 +110,16 @@ export const SFX_SRC = {
   unlock: { src: "assets/sounds/unlock2.mp3" },
   fanfare: { src: "assets/sounds/fanfare3.mp3" },
   chop: { src: "assets/sounds/coin2.mp3" },
+};
+
+// Canonical direction list and their (col, row) step vectors, shared by
+// gameplay.js (player/enemy movement) and collision.js (lookahead checks).
+export const DIRECTIONS = ["up", "down", "left", "right"];
+export const DIRECTION_OFFSETS = {
+  up: [0, -1],
+  down: [0, 1],
+  left: [-1, 0],
+  right: [1, 0],
 };
 
 export const KEY_MAP = {

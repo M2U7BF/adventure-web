@@ -21,5 +21,7 @@ export function createInitialState() {
     gameOver: false,
     hiddenTotal: 0,
     hiddenCollected: 0,
+    bestTime: null,
+    isNewBest: false,
   };
 }

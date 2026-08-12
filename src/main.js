@@ -1,6 +1,6 @@
-import { SCREEN_WIDTH, SCREEN_HEIGHT, TILE_DEFS, OBJECT_DEFS, OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE, PLAYER_SPRITE_SRC, SFX_SRC, GRASS_TILE, MAX_WORLD_COL, MAX_WORLD_ROW, ENEMY_COUNT, HIDDEN_ITEM_COUNT } from "./constants.js";
+import { SCREEN_WIDTH, SCREEN_HEIGHT, TILE_DEFS, OBJECT_DEFS, RANDOM_OBJECT_TYPES, FIXED_OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE, PLAYER_SPRITE_SRC, SFX_SRC, GRASS_TILE, MAX_WORLD_COL, MAX_WORLD_ROW, ENEMY_COUNT, HIDDEN_ITEM_COUNT, BEST_TIME_STORAGE_KEY } from "./constants.js";
 import { loadImage, SfxPlayer } from "./assets.js";
-import { generateMap, placeHiddenItems } from "./mapgen.js";
+import { generateMap, randomizeObjectPlacements, placeHiddenItems } from "./mapgen.js";
 import { createPlayer, makeObjectInstance, makeHiddenItemInstance, createEnemy } from "./entities.js";
 import { createInitialState } from "./state.js";
 import { update } from "./gameplay.js";
@@ -8,6 +8,7 @@ import { draw } from "./render.js";
 import { setupInput } from "./input.js";
 import { GameLoop } from "./loop.js";
 import { Overlay } from "./overlay.js";
+import { randInt } from "./random.js";
 
 const canvas = document.getElementById("game");
 canvas.width = SCREEN_WIDTH;
@@ -23,9 +24,33 @@ const overlay = new Overlay({
 });
 
 const state = createInitialState();
+
+function loadBestTime() {
+  const stored = localStorage.getItem(BEST_TIME_STORAGE_KEY);
+  state.bestTime = stored !== null ? parseFloat(stored) : null;
+  state.isNewBest = false;
+}
+
+// Called once, the instant gameFinished flips to true, before the finish
+// screen is drawn on that same frame (see the onDraw callback below), so
+// state.bestTime/isNewBest are already correct by the time render.js reads
+// them.
+function recordFinishTime() {
+  if (state.bestTime === null || state.playTime < state.bestTime) {
+    state.bestTime = state.playTime;
+    state.isNewBest = true;
+    localStorage.setItem(BEST_TIME_STORAGE_KEY, String(state.playTime));
+  }
+}
+
+let finishRecorded = false;
 const loop = new GameLoop(
   () => update(state),
   () => {
+    if (state.gameFinished && !finishRecorded) {
+      finishRecorded = true;
+      recordFinishTime();
+    }
     const result = draw(ctx, state);
     if (result === "finished") {
       loop.stop();
@@ -40,30 +65,29 @@ const loop = new GameLoop(
 async function loadWorld() {
   const tileImgs = await Promise.all(TILE_DEFS.map((t) => loadImage(t.src)));
 
-  const hiddenTiles = placeHiddenItems(HIDDEN_ITEM_COUNT, DEFAULT_PLAYER_TILE, OBJECT_PLACEMENTS);
+  const objectPlacements = randomizeObjectPlacements(RANDOM_OBJECT_TYPES, FIXED_OBJECT_PLACEMENTS, DEFAULT_PLAYER_TILE);
+  const hiddenTiles = placeHiddenItems(HIDDEN_ITEM_COUNT, DEFAULT_PLAYER_TILE, objectPlacements);
   const hiddenPlacements = hiddenTiles.map((t) => ({ type: "Hidden", col: t.col, row: t.row }));
-  const allPlacements = [...OBJECT_PLACEMENTS, ...hiddenPlacements];
+  const allPlacements = [...objectPlacements, ...hiddenPlacements];
 
   state.tiles = TILE_DEFS.map((def, i) => ({ img: tileImgs[i], collision: def.collision, destructibleTo: def.destructibleTo }));
   state.mapTileNum = generateMap(allPlacements, DEFAULT_PLAYER_TILE);
 
-  const objTypeNames = Object.keys(OBJECT_DEFS);
+  // Axe/Shield have no `src` (render.js draws them procedurally instead), so
+  // only load images for the object types that actually have one.
+  const objTypeNames = Object.keys(OBJECT_DEFS).filter((t) => OBJECT_DEFS[t].src);
   const objImgs = await Promise.all(objTypeNames.map((t) => loadImage(OBJECT_DEFS[t].src)));
   objTypeNames.forEach((t, i) => {
     OBJECT_DEFS[t].img = objImgs[i];
   });
   state.worldObjects = [
-    ...OBJECT_PLACEMENTS.map(makeObjectInstance),
+    ...objectPlacements.map(makeObjectInstance),
     ...hiddenTiles.map((t) => makeHiddenItemInstance(t.col, t.row)),
   ];
   state.keyIcon = OBJECT_DEFS.Key.img;
   state.hiddenTotal = hiddenTiles.length;
   state.hiddenCollected = 0;
   state.enemies = spawnEnemies(state, DEFAULT_PLAYER_TILE, ENEMY_COUNT);
-}
-
-function randInt(min, max) {
-  return min + Math.floor(Math.random() * (max - min + 1));
 }
 
 // Scatters enemies on open ground, away from the player's spawn tile, so the
@@ -104,6 +128,7 @@ function loadSfx() {
 
 async function boot() {
   overlay.show("Adventure", "読み込み中...");
+  loadBestTime();
 
   try {
     await Promise.all([loadWorld(), loadPlayer()]);
@@ -111,7 +136,8 @@ async function boot() {
 
     setupInput(state, document.getElementById("touchpad"), document.getElementById("actionBtn"));
     draw(ctx, state);
-    overlay.show("Adventure", "矢印キー / WASDで移動\n鍵を集めてドアを開け、宝箱を探そう", true);
+    const bestText = state.bestTime !== null ? `\nベストタイム: ${state.bestTime.toFixed(1)}` : "";
+    overlay.show("Adventure", "矢印キー / WASDで移動\n鍵を集めてドアを開け、宝箱を探そう" + bestText, true);
   } catch (err) {
     console.error(err);
     overlay.show("読み込みエラー", String(err.message || err));

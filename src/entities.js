@@ -1,4 +1,5 @@
-import { TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_PLAYER_TILE, OBJECT_DEFS, PLAYER_MAX_HP, ENEMY_SPEED } from "./constants.js";
+import { TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_PLAYER_TILE, OBJECT_DEFS, PLAYER_MAX_HP, ENEMY_SPEED, DIRECTIONS } from "./constants.js";
+import { randInt } from "./random.js";
 
 export function createPlayer() {
   return {
@@ -7,6 +8,7 @@ export function createPlayer() {
     speed: 8,
     direction: "down",
     hasKey: 0,
+    hasAxeUpgrade: false,
     hp: PLAYER_MAX_HP,
     maxHp: PLAYER_MAX_HP,
     invincibleTicks: 0,
@@ -30,7 +32,7 @@ export function createEnemy(col, row) {
     worldX: col * TILE_SIZE,
     worldY: row * TILE_SIZE,
     speed: ENEMY_SPEED,
-    direction: ["up", "down", "left", "right"][Math.floor(Math.random() * 4)],
+    direction: DIRECTIONS[randInt(0, DIRECTIONS.length - 1)],
     solidArea: { x: 8, y: 8, width: 32, height: 32 },
     solidAreaDefaultX: 8,
     solidAreaDefaultY: 8,

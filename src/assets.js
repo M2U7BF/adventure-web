@@ -10,13 +10,6 @@ export function loadImage(src) {
   });
 }
 
-export function loadText(src) {
-  return fetch(src).then((r) => {
-    if (!r.ok) throw new Error("text failed: " + src);
-    return r.text();
-  });
-}
-
 export class SfxPlayer {
   constructor(src, { loop = false } = {}) {
     this.audio = new Audio(src);
