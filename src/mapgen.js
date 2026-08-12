@@ -149,6 +149,46 @@ function ensureConnectivity(grid, spawn, mustReach) {
   }
 }
 
+// Minimum distance (tiles) a randomized object must keep from the player
+// spawn, so the keys/goal aren't handed to the player immediately.
+const MIN_SPAWN_DISTANCE = 14;
+// Minimum distance kept between two randomized objects so they don't cluster.
+const MIN_OBJECT_SPACING = 3;
+const BORDER_MARGIN = 3;
+
+function distance([c1, r1], [c2, r2]) {
+  return Math.hypot(c1 - c2, r1 - r2);
+}
+
+function randomFarTile(playerTile, placed) {
+  let col, row;
+  let attempts = 0;
+  do {
+    col = randInt(BORDER_MARGIN, MAX_WORLD_COL - 1 - BORDER_MARGIN);
+    row = randInt(BORDER_MARGIN, MAX_WORLD_ROW - 1 - BORDER_MARGIN);
+    attempts++;
+  } while (
+    attempts < 500 &&
+    (distance([col, row], playerTile) < MIN_SPAWN_DISTANCE ||
+      placed.some((p) => distance([col, row], p) < MIN_OBJECT_SPACING))
+  );
+  return [col, row];
+}
+
+// Rolls a fresh random position for each entry in `types`, keeping them far
+// enough from spawn and from each other. `fixed` placements are returned
+// unchanged. Reachability from spawn is guaranteed separately by
+// generateMap()'s call to ensureConnectivity().
+export function randomizeObjectPlacements(types, fixed, playerTile) {
+  const placed = fixed.map((o) => [o.col, o.row]);
+  const randomized = types.map((type) => {
+    const tile = randomFarTile(playerTile, placed);
+    placed.push(tile);
+    return { type, col: tile[0], row: tile[1] };
+  });
+  return [...fixed, ...randomized];
+}
+
 // Splits the field into a handful of walled-off "sections" (faces) by
 // drawing full-length wall partitions across the grid, each with one or two
 // narrow gaps carved into it. The gaps are the only way to walk from one
