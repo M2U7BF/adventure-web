@@ -24,6 +24,55 @@ function drawTiles(ctx, state) {
   }
 }
 
+// Axe/Shield have no sprite asset (see constants.js#OBJECT_DEFS), so they're
+// drawn as a simple canvas icon on a dark badge instead of an image.
+function drawIconObject(ctx, type, screenX, screenY) {
+  const cx = screenX + TILE_SIZE / 2;
+  const cy = screenY + TILE_SIZE / 2;
+  const r = TILE_SIZE * 0.3;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 6, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(10, 12, 20, 0.55)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  if (type === "Axe") {
+    ctx.strokeStyle = "#c9c9c9";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.3, cy - r * 0.8);
+    ctx.lineTo(cx - r * 0.3, cy + r * 0.8);
+    ctx.stroke();
+    ctx.fillStyle = "#9a6b3a";
+    ctx.beginPath();
+    ctx.arc(cx + r * 0.15, cy - r * 0.35, r * 0.55, -Math.PI * 0.65, Math.PI * 0.15);
+    ctx.lineTo(cx - r * 0.3, cy - r * 0.1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#5a3a1a";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  } else if (type === "Shield") {
+    ctx.fillStyle = "#4a90d9";
+    ctx.strokeStyle = "#1c4a7a";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.quadraticCurveTo(cx + r, cy - r * 0.6, cx + r * 0.8, cy + r * 0.1);
+    ctx.quadraticCurveTo(cx + r * 0.5, cy + r * 0.9, cx, cy + r);
+    ctx.quadraticCurveTo(cx - r * 0.5, cy + r * 0.9, cx - r * 0.8, cy + r * 0.1);
+    ctx.quadraticCurveTo(cx - r, cy - r * 0.6, cx, cy - r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawObjects(ctx, state) {
   const { player, worldObjects } = state;
   for (const obj of worldObjects) {
@@ -32,7 +81,11 @@ function drawObjects(ctx, state) {
 
     const screenX = obj.worldX - player.worldX + player.screenX;
     const screenY = obj.worldY - player.worldY + player.screenY;
-    ctx.drawImage(obj.image, screenX, screenY, TILE_SIZE, TILE_SIZE);
+    if (obj.image) {
+      ctx.drawImage(obj.image, screenX, screenY, TILE_SIZE, TILE_SIZE);
+    } else {
+      drawIconObject(ctx, obj.type, screenX, screenY);
+    }
   }
 }
 
@@ -106,15 +159,23 @@ function drawFinishedUI(ctx, state) {
 
   ctx.font = "bold 64px Arial";
   strokedText(ctx, "Congratulations!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 2);
+
+  if (state.bestTime !== null) {
+    ctx.font = "24px Arial";
+    const bestText = state.isNewBest
+      ? "New Best! : " + state.bestTime.toFixed(1)
+      : "ベストタイム : " + state.bestTime.toFixed(1);
+    strokedText(ctx, bestText, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 4);
+  }
   ctx.textAlign = "left";
 }
 
 function drawHpBar(ctx, state) {
   const { player } = state;
   const panelWidth = 24 + player.maxHp * 26;
-  panel(ctx, 12, 70, panelWidth, 40);
+  panel(ctx, HUD_MARGIN, 70, panelWidth, 40);
   for (let i = 0; i < player.maxHp; i++) {
-    const cx = 12 + 22 + i * 26;
+    const cx = HUD_MARGIN + 22 + i * 26;
     const cy = 70 + 20;
     ctx.beginPath();
     ctx.arc(cx, cy, 10, 0, Math.PI * 2);
@@ -135,23 +196,73 @@ function drawGameOverUI(ctx, state) {
   ctx.textAlign = "left";
 }
 
+const HUD_MARGIN = 12;
+const MINIMAP_SIZE = 120;
+const MINIMAP_MARGIN = HUD_MARGIN;
+const MINIMAP_PADDING = 8;
+const MINIMAP_OBJECT_COLORS = {
+  Key: "#e8d24a",
+  Door: "#8a5a2a",
+  Chest: "#f0b429",
+  Boots: "#4ac9e8",
+};
+
+// Bottom-right panel showing the player and every uncollected world object's
+// position, scaled down from world pixel space, so the 50x50 field is easier
+// to navigate without memorizing the (randomly generated) layout.
+function drawMinimap(ctx, state) {
+  const { player, worldObjects } = state;
+  const x = SCREEN_WIDTH - MINIMAP_SIZE - MINIMAP_MARGIN;
+  const y = SCREEN_HEIGHT - MINIMAP_SIZE - MINIMAP_MARGIN;
+  panel(ctx, x, y, MINIMAP_SIZE, MINIMAP_SIZE, 8);
+
+  const worldPxWidth = MAX_WORLD_COL * TILE_SIZE;
+  const worldPxHeight = MAX_WORLD_ROW * TILE_SIZE;
+  const innerSize = MINIMAP_SIZE - MINIMAP_PADDING * 2;
+  const scaleX = innerSize / worldPxWidth;
+  const scaleY = innerSize / worldPxHeight;
+  const toMinimap = (worldX, worldY) => [
+    x + MINIMAP_PADDING + worldX * scaleX,
+    y + MINIMAP_PADDING + worldY * scaleY,
+  ];
+
+  for (const obj of worldObjects) {
+    if (!obj || obj.removed) continue;
+    const [mx, my] = toMinimap(obj.worldX, obj.worldY);
+    ctx.beginPath();
+    ctx.arc(mx, my, 3, 0, Math.PI * 2);
+    ctx.fillStyle = MINIMAP_OBJECT_COLORS[obj.type] || "#ffffff";
+    ctx.fill();
+  }
+
+  const [px, py] = toMinimap(player.worldX, player.worldY);
+  ctx.beginPath();
+  ctx.arc(px, py, 4, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
 function drawHud(ctx, state) {
   ctx.textAlign = "left";
 
   // Key count pill (top-left).
-  panel(ctx, 12, 10, 132, 52);
+  panel(ctx, HUD_MARGIN, 10, 132, 52);
   ctx.drawImage(state.keyIcon, 20, 18, 36, 36);
   ctx.font = "bold 24px Arial";
   strokedText(ctx, "x " + state.player.hasKey, 66, 44);
 
   drawHpBar(ctx, state);
+  drawMinimap(ctx, state);
 
   // Timer pill (top-right).
   const timeText = "Time : " + state.playTime.toFixed(1);
   ctx.font = "bold 24px Arial";
   const timeWidth = ctx.measureText(timeText).width;
   const timePanelWidth = timeWidth + 32;
-  const timePanelX = SCREEN_WIDTH - timePanelWidth - 12;
+  const timePanelX = SCREEN_WIDTH - timePanelWidth - HUD_MARGIN;
   panel(ctx, timePanelX, 10, timePanelWidth, 52);
   strokedText(ctx, timeText, timePanelX + 16, 44);
 
