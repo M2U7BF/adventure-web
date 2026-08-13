@@ -93,7 +93,9 @@ function setupWorld(difficultyKey) {
 }
 
 // Scatters enemies on open ground, away from the player's spawn tile, so the
-// player isn't ambushed the instant the game starts.
+// player isn't ambushed the instant the game starts. The first enemy placed
+// is the "tough" one (see entities.js#createEnemy) that takes three hits to
+// defeat instead of one.
 function spawnEnemies(state, playerTile, count) {
   const enemies = [];
   let attempts = 0;
@@ -105,7 +107,7 @@ function spawnEnemies(state, playerTile, count) {
     const dx = col - playerTile[0];
     const dy = row - playerTile[1];
     if (dx * dx + dy * dy < 36) continue;
-    enemies.push(createEnemy(col, row));
+    enemies.push(createEnemy(col, row, { tough: enemies.length === 0 }));
   }
   return enemies;
 }
