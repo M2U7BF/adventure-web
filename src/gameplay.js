@@ -1,4 +1,4 @@
-import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, PLAYER_INVINCIBLE_TICKS, ROCK_TILE, GRASS_TILE, SHIELD_INVINCIBLE_TICKS, DIRECTIONS, DIRECTION_OFFSETS } from "./constants.js";
+import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, PLAYER_INVINCIBLE_TICKS, ROCK_TILE, GRASS_TILE, SHIELD_INVINCIBLE_TICKS, DASH_SPEED, DASH_DURATION_TICKS, DIRECTIONS, DIRECTION_OFFSETS } from "./constants.js";
 import { checkTileCollision, checkObjectCollision, checkEnemyContact } from "./collision.js";
 import { randInt } from "./random.js";
 
@@ -112,6 +112,27 @@ function movePlayer(state) {
   player.isMoving = true;
 }
 
+// Advances an in-progress dash attack: a short burst of movement in the
+// player's facing direction, faster than normal walking and (per
+// handleEnemyContact below) lethal to any enemy touched along the way.
+// Overrides player.speed for the tile-collision lookahead so the dash
+// respects walls/water at its own (longer) reach, mirroring movePlayer.
+function updateDash(state) {
+  const player = state.player;
+  player.dashTicks--;
+
+  const [dCol, dRow] = DIRECTION_OFFSETS[player.direction];
+  const normalSpeed = player.speed;
+  player.speed = DASH_SPEED;
+  checkTileCollision(player, state);
+  if (!player.collisionOn) {
+    player.worldX += dCol * DASH_SPEED;
+    player.worldY += dRow * DASH_SPEED;
+    player.isMoving = true;
+  }
+  player.speed = normalSpeed;
+}
+
 // Alternates the player's walk-cycle frame while moving; holds frame 0
 // (idle pose) as soon as they stop.
 function tickAnimation(state) {
@@ -159,10 +180,25 @@ function updateEnemies(state) {
   }
 }
 
+// Removes the enemy the player just dashed into (see updateDash) - the
+// current means of defeating enemies (issue #24).
+function defeatEnemy(state, index) {
+  state.enemies.splice(index, 1);
+  state.sfx.chop.play();
+  showMessage(state, "敵を倒した！");
+}
+
 // Applies contact damage/knockback and triggers game over at 0 HP (mirrors
-// the intent of Player.hp in the original game's later revisions).
+// the intent of Player.hp in the original game's later revisions). While
+// dashing, contact defeats the enemy instead of hurting the player.
 function handleEnemyContact(state) {
   const player = state.player;
+
+  if (player.dashTicks > 0) {
+    const dashIndex = checkEnemyContact(player, state.enemies);
+    if (dashIndex >= 0) defeatEnemy(state, dashIndex);
+    return;
+  }
 
   if (player.invincibleTicks > 0) {
     player.invincibleTicks--;
@@ -204,13 +240,18 @@ export function update(state) {
   checkTileCollision(player, state);
   pickUpObject(state, checkObjectCollision(player, state.worldObjects));
 
-  movePlayer(state);
+  if (player.dashTicks > 0) {
+    updateDash(state);
+  } else {
+    movePlayer(state);
+  }
   tickAnimation(state);
   updateEnemies(state);
   handleEnemyContact(state);
 
   if (state.actionQueued) {
     chopTile(state);
+    if (player.dashTicks <= 0) player.dashTicks = DASH_DURATION_TICKS;
     state.actionQueued = false;
   }
 
