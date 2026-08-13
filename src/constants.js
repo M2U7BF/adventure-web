@@ -82,6 +82,15 @@ export const BEST_TIME_STORAGE_KEY = "adventure_best_time";
 export const PLAYER_MAX_HP = 5;
 export const ENEMY_COUNT = 6;
 export const ENEMY_SPEED = 2;
+// Hits required to defeat a regular enemy vs. the one "tough" enemy spawned
+// each game (see main.js#spawnEnemies), which takes three dash hits instead
+// of one and is drawn with a different appearance (see render.js#drawEnemies).
+export const ENEMY_HP = 1;
+export const TOUGH_ENEMY_HP = 3;
+// Ticks a damaged-but-not-defeated enemy is immune to further dash hits,
+// so a single dash (DASH_DURATION_TICKS long) can't multi-hit it while the
+// player's hitbox happens to overlap it for more than one tick.
+export const ENEMY_HIT_COOLDOWN_TICKS = 20;
 export const ENEMY_CONTACT_DAMAGE = 1;
 export const ENEMY_KNOCKBACK = TILE_SIZE * 2;
 // Ticks (at FPS) the player is immune to further damage after being hit.
