@@ -17,6 +17,7 @@ export function createInitialState() {
     message: "",
     messageCounter: 0,
     playTime: 0,
+    score: 0,
     gameFinished: false,
     gameOver: false,
     bestTime: null,

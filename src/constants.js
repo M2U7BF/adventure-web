@@ -92,6 +92,11 @@ export const DIFFICULTIES = {
 // ---------------------------------------------------------------------
 // Enemies / HP
 // ---------------------------------------------------------------------
+// Score awarded for defeating an enemy or clearing a destructible obstacle
+// (tree/bush/rock), see gameplay.js#defeatEnemy / #chopTile.
+export const SCORE_ENEMY_DEFEAT = 100;
+export const SCORE_CHOP = 10;
+
 export const PLAYER_MAX_HP = 5;
 export const ENEMY_COUNT = 6;
 export const ENEMY_SPEED = 2;
