@@ -160,12 +160,14 @@ function drawFinishedUI(ctx, state) {
   ctx.font = "bold 64px Arial";
   strokedText(ctx, "Congratulations!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 2);
 
+  ctx.font = "24px Arial";
+  strokedText(ctx, "Score : " + state.score, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 4);
+
   if (state.bestTime !== null) {
-    ctx.font = "24px Arial";
     const bestText = state.isNewBest
       ? "New Best! : " + state.bestTime.toFixed(1)
       : "ベストタイム : " + state.bestTime.toFixed(1);
-    strokedText(ctx, bestText, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 4);
+    strokedText(ctx, bestText, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 5);
   }
   ctx.textAlign = "left";
 }
@@ -193,6 +195,7 @@ function drawGameOverUI(ctx, state) {
   strokedText(ctx, "GAME OVER", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
   ctx.font = "24px Arial";
   strokedText(ctx, "生き延びた時間 : " + state.playTime.toFixed(1), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE);
+  strokedText(ctx, "Score : " + state.score, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + TILE_SIZE * 2);
   ctx.textAlign = "left";
 }
 
@@ -245,6 +248,17 @@ function drawMinimap(ctx, state) {
   ctx.stroke();
 }
 
+// Score pill, placed to the right of the key count pill (top-left row).
+function drawScore(ctx, state) {
+  const scoreText = "Score : " + state.score;
+  ctx.font = "bold 24px Arial";
+  const scoreWidth = ctx.measureText(scoreText).width;
+  const scorePanelWidth = scoreWidth + 32;
+  const scorePanelX = HUD_MARGIN + 132 + 8;
+  panel(ctx, scorePanelX, 10, scorePanelWidth, 52);
+  strokedText(ctx, scoreText, scorePanelX + 16, 44);
+}
+
 function drawHud(ctx, state) {
   ctx.textAlign = "left";
 
@@ -254,6 +268,7 @@ function drawHud(ctx, state) {
   ctx.font = "bold 24px Arial";
   strokedText(ctx, "x " + state.player.hasKey, 66, 44);
 
+  drawScore(ctx, state);
   drawHpBar(ctx, state);
   drawMinimap(ctx, state);
 

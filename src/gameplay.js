@@ -1,4 +1,4 @@
-import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, PLAYER_INVINCIBLE_TICKS, ROCK_TILE, GRASS_TILE, SHIELD_INVINCIBLE_TICKS, DASH_SPEED, DASH_DURATION_TICKS, DIRECTIONS, DIRECTION_OFFSETS } from "./constants.js";
+import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, PLAYER_INVINCIBLE_TICKS, ROCK_TILE, GRASS_TILE, SHIELD_INVINCIBLE_TICKS, DASH_SPEED, DASH_DURATION_TICKS, DIRECTIONS, DIRECTION_OFFSETS, SCORE_ENEMY_DEFEAT, SCORE_CHOP } from "./constants.js";
 import { checkTileCollision, checkObjectCollision, checkEnemyContact } from "./collision.js";
 import { randInt } from "./random.js";
 
@@ -83,6 +83,7 @@ function chopTile(state) {
   if (tileIndex === ROCK_TILE) {
     if (!player.hasAxeUpgrade) return;
     state.mapTileNum[col][row] = GRASS_TILE;
+    state.score += SCORE_CHOP;
     state.sfx.chop.play();
     showMessage(state, "岩を砕いた");
     return;
@@ -92,6 +93,7 @@ function chopTile(state) {
   if (!tileDef || tileDef.destructibleTo === undefined) return;
 
   state.mapTileNum[col][row] = tileDef.destructibleTo;
+  state.score += SCORE_CHOP;
   state.sfx.chop.play();
   showMessage(state, "You cleared the way");
 }
@@ -184,6 +186,7 @@ function updateEnemies(state) {
 // current means of defeating enemies (issue #24).
 function defeatEnemy(state, index) {
   state.enemies.splice(index, 1);
+  state.score += SCORE_ENEMY_DEFEAT;
   state.sfx.chop.play();
   showMessage(state, "敵を倒した！");
 }
