@@ -103,6 +103,29 @@ canvas#game {
   background: #f0d356;
 }
 
+#difficultySelect {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 0 0 16px;
+}
+
+#difficultySelect button {
+  font-size: 0.95rem;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background: #22222c;
+  color: #eee;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#difficultySelect button:hover {
+  background: #33333f;
+  border-color: #e0c341;
+}
+
 .help {
   font-size: 0.85rem;
   opacity: 0.75;
