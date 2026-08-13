@@ -87,6 +87,13 @@ export const ENEMY_KNOCKBACK = TILE_SIZE * 2;
 // Ticks (at FPS) the player is immune to further damage after being hit.
 export const PLAYER_INVINCIBLE_TICKS = 60;
 
+// Dash attack: triggered by the same action key as the axe (see
+// gameplay.js#update), it's the current means of defeating enemies. Any
+// enemy the player touches while dashing is defeated instead of dealing
+// contact damage (see gameplay.js#handleEnemyContact).
+export const DASH_SPEED = 20;
+export const DASH_DURATION_TICKS = 8;
+
 // Two frames per direction: [idle/step-1, step-2]. render.js alternates
 // between them while the player is moving to animate the walk cycle.
 export const PLAYER_SPRITE_SRC = {
@@ -125,6 +132,8 @@ export const KEY_MAP = {
   ArrowRight: "right", KeyD: "right",
 };
 
-// Pressed to chop down a destructible obstacle (tree/bush) the player is
-// facing (see gameplay.js#chopTile).
+// Pressed to swing the axe: chops down a destructible obstacle (tree/bush)
+// the player is facing (see gameplay.js#chopTile) and triggers a short dash
+// attack that defeats any enemy touched along the way (see
+// gameplay.js#updateDash).
 export const ACTION_KEYS = new Set(["Space", "Enter"]);
