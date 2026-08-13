@@ -90,6 +90,10 @@ function setupWorld(difficultyKey) {
   state.worldObjects = objectPlacements.map(makeObjectInstance);
   state.enemies = spawnEnemies(state, DEFAULT_PLAYER_TILE, difficulty.enemyCount);
   state.player.speed += difficulty.playerSpeedBonus;
+  if (difficulty.playerMaxHp) {
+    state.player.maxHp = difficulty.playerMaxHp;
+    state.player.hp = difficulty.playerMaxHp;
+  }
 }
 
 // Scatters enemies on open ground, away from the player's spawn tile, so the

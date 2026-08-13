@@ -79,14 +79,15 @@ export const BEST_TIME_STORAGE_KEY = "adventure_best_time";
 // ---------------------------------------------------------------------
 // Difficulty selection (see overlay.js/main.js). `obstacleDensity` scales
 // the tree/bush/rock generation counts in mapgen.js#generateMap,
-// `enemyCount` overrides ENEMY_COUNT, and `playerSpeedBonus` is added to
-// the player's base speed once the world is built.
+// `enemyCount` overrides ENEMY_COUNT, `playerSpeedBonus` is added to the
+// player's base speed once the world is built, and `playerMaxHp` overrides
+// PLAYER_MAX_HP (defaults to it when omitted).
 // ---------------------------------------------------------------------
 export const DEFAULT_DIFFICULTY = "normal";
 export const DIFFICULTIES = {
   easy: { label: "かんたん", obstacleDensity: 0.6, enemyCount: 3, playerSpeedBonus: 2 },
   normal: { label: "ふつう", obstacleDensity: 1, enemyCount: 6, playerSpeedBonus: 0 },
-  hard: { label: "むずかしい", obstacleDensity: 1.6, enemyCount: 9, playerSpeedBonus: 0 },
+  hard: { label: "むずかしい", obstacleDensity: 1.6, enemyCount: 9, playerSpeedBonus: 0, playerMaxHp: 3 },
 };
 
 // ---------------------------------------------------------------------
