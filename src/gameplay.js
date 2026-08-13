@@ -1,4 +1,4 @@
-import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, PLAYER_INVINCIBLE_TICKS, ROCK_TILE, GRASS_TILE, SHIELD_INVINCIBLE_TICKS, DASH_SPEED, DASH_DURATION_TICKS, DIRECTIONS, DIRECTION_OFFSETS, SCORE_ENEMY_DEFEAT, SCORE_CHOP } from "./constants.js";
+import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, ENEMY_HIT_COOLDOWN_TICKS, PLAYER_INVINCIBLE_TICKS, ROCK_TILE, GRASS_TILE, SHIELD_INVINCIBLE_TICKS, DASH_SPEED, DASH_DURATION_TICKS, DIRECTIONS, DIRECTION_OFFSETS, SCORE_ENEMY_DEFEAT, SCORE_CHOP } from "./constants.js";
 import { checkTileCollision, checkObjectCollision, checkEnemyContact } from "./collision.js";
 import { randInt } from "./random.js";
 
@@ -165,6 +165,8 @@ function tickMessage(state) {
 // so enemies respect the same solid tiles as the player.
 function updateEnemies(state) {
   for (const enemy of state.enemies) {
+    if (enemy.hitCooldownTicks > 0) enemy.hitCooldownTicks--;
+
     enemy.collisionOn = false;
     checkTileCollision(enemy, state);
 
@@ -191,15 +193,32 @@ function defeatEnemy(state, index) {
   showMessage(state, "敵を倒した！");
 }
 
+// Applies one dash hit to the enemy at `index`: the "tough" enemy (see
+// entities.js#createEnemy) survives until its hp reaches 0, everything else
+// is defeated in one hit as before.
+function damageEnemy(state, index) {
+  const enemy = state.enemies[index];
+  if (enemy.hitCooldownTicks > 0) return;
+
+  enemy.hp -= 1;
+  if (enemy.hp <= 0) {
+    defeatEnemy(state, index);
+    return;
+  }
+  enemy.hitCooldownTicks = ENEMY_HIT_COOLDOWN_TICKS;
+  state.sfx.chop.play();
+  showMessage(state, `敵にダメージを与えた！ (残り${enemy.hp})`);
+}
+
 // Applies contact damage/knockback and triggers game over at 0 HP (mirrors
 // the intent of Player.hp in the original game's later revisions). While
-// dashing, contact defeats the enemy instead of hurting the player.
+// dashing, contact damages the enemy instead of hurting the player.
 function handleEnemyContact(state) {
   const player = state.player;
 
   if (player.dashTicks > 0) {
     const dashIndex = checkEnemyContact(player, state.enemies);
-    if (dashIndex >= 0) defeatEnemy(state, dashIndex);
+    if (dashIndex >= 0) damageEnemy(state, dashIndex);
     return;
   }
 

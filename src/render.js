@@ -97,6 +97,43 @@ function drawPlayer(ctx, state) {
   ctx.drawImage(sprite, player.screenX, player.screenY, TILE_SIZE, TILE_SIZE);
 }
 
+// Draws the spiky crown that marks the "tough" enemy (see
+// entities.js#createEnemy) as visually distinct from regular enemies.
+function drawToughCrown(ctx, cx, cy, r) {
+  ctx.fillStyle = "#e8c94a";
+  ctx.strokeStyle = "#8a6a10";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  const points = 6;
+  for (let i = 0; i <= points; i++) {
+    const angle = -Math.PI / 2 + (i / points) * Math.PI * 2;
+    const spikeR = i % 2 === 0 ? r * 1.5 : r * 1.1;
+    const x = cx + Math.cos(angle) * spikeR;
+    const y = cy + Math.sin(angle) * spikeR;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+}
+
+// Small pips above the tough enemy's head showing hits remaining before
+// it's defeated.
+function drawEnemyHpPips(ctx, enemy, cx, topY) {
+  const gap = 8;
+  const startX = cx - ((enemy.maxHp - 1) * gap) / 2;
+  for (let i = 0; i < enemy.maxHp; i++) {
+    ctx.beginPath();
+    ctx.arc(startX + i * gap, topY, 3, 0, Math.PI * 2);
+    ctx.fillStyle = i < enemy.hp ? "#e8c94a" : "rgba(255,255,255,0.2)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.6)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
 function drawEnemies(ctx, state) {
   const { player, enemies } = state;
   for (const enemy of enemies) {
@@ -105,15 +142,17 @@ function drawEnemies(ctx, state) {
     const screenY = enemy.worldY - player.worldY + player.screenY;
     const cx = screenX + TILE_SIZE / 2;
     const cy = screenY + TILE_SIZE / 2;
-    const r = TILE_SIZE * 0.32;
+    const r = enemy.tough ? TILE_SIZE * 0.4 : TILE_SIZE * 0.32;
 
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = "#b03a3a";
+    ctx.fillStyle = enemy.tough ? "#5a2a8a" : "#b03a3a";
     ctx.fill();
-    ctx.strokeStyle = "#5a1414";
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = enemy.tough ? "#2a1050" : "#5a1414";
+    ctx.lineWidth = enemy.tough ? 4 : 3;
     ctx.stroke();
+
+    if (enemy.tough) drawToughCrown(ctx, cx, cy - r * 0.6, r * 0.4);
 
     ctx.fillStyle = "#fff";
     ctx.beginPath();
@@ -125,6 +164,8 @@ function drawEnemies(ctx, state) {
     ctx.arc(cx - r * 0.35, cy - r * 0.2, r * 0.1, 0, Math.PI * 2);
     ctx.arc(cx + r * 0.35, cy - r * 0.2, r * 0.1, 0, Math.PI * 2);
     ctx.fill();
+
+    if (enemy.tough) drawEnemyHpPips(ctx, enemy, cx, cy - r - 14);
   }
 }
 
