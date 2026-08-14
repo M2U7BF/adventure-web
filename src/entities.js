@@ -22,7 +22,6 @@ export function createPlayer() {
     isMoving: false,
     animTimer: 0,
     animFrame: 0,
-    dashTicks: 0,
   };
 }
 

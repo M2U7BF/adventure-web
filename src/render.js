@@ -169,6 +169,36 @@ function drawEnemies(ctx, state) {
   }
 }
 
+// Draws each in-flight wave attack (see gameplay.js#fireWave/updateWaves) as
+// a small glowing crescent facing its direction of travel, brighter and
+// larger when charged.
+function drawWaves(ctx, state) {
+  const { player, waves } = state;
+  for (const wave of waves) {
+    if (!isOnScreen(wave.worldX, wave.worldY, player)) continue;
+
+    const screenX = wave.worldX - player.worldX + player.screenX;
+    const screenY = wave.worldY - player.worldY + player.screenY;
+    const cx = screenX + wave.solidArea.width / 2;
+    const cy = screenY + wave.solidArea.height / 2;
+    const r = wave.solidArea.width / 2;
+    const angle = { up: -Math.PI / 2, down: Math.PI / 2, left: Math.PI, right: 0 }[wave.direction];
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.arc(0, 0, r, -Math.PI / 2.2, Math.PI / 2.2);
+    ctx.closePath();
+    ctx.fillStyle = wave.charged ? "rgba(120, 210, 255, 0.85)" : "rgba(180, 230, 255, 0.75)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
 function strokedText(ctx, text, x, y) {
   ctx.strokeStyle = "rgba(0,0,0,0.8)";
   ctx.lineWidth = 3;
@@ -342,6 +372,7 @@ export function draw(ctx, state) {
   drawTiles(ctx, state);
   drawObjects(ctx, state);
   drawEnemies(ctx, state);
+  drawWaves(ctx, state);
   drawPlayer(ctx, state);
 
   if (state.gameOver) {
