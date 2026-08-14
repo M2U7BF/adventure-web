@@ -1,4 +1,4 @@
-import { KEY_MAP, ACTION_KEYS } from "./constants.js";
+import { KEY_MAP, ACTION_KEYS, ACTION_CHARGE_MS } from "./constants.js";
 
 // Fraction of the knob's max travel distance that must be crossed before a
 // direction is registered, so small jitter near the center doesn't cause
@@ -75,17 +75,31 @@ function setupJoystick(state, joystick) {
 
 // Wires keyboard and on-screen touchpad input to `keysHeld`, the set of
 // directions currently pressed (mirrors KeyHandler.java, extended for touch).
-// Also queues a one-shot "action" (chop) on the action key's down-edge, so
-// holding it doesn't repeat-fire once per key-repeat tick.
+// The action key/button now charges a wave attack while held and fires it
+// on release (see gameplay.js#fireWave): a quick tap shoots a short-range
+// wave, holding it past ACTION_CHARGE_MS shoots a longer-range charged one.
 export function setupInput(state, touchpad, actionButton) {
+  let actionPressedAt = 0;
+
+  const pressAction = () => {
+    if (state.actionKeyDown) return;
+    state.actionKeyDown = true;
+    actionPressedAt = performance.now();
+  };
+  const releaseAction = () => {
+    if (!state.actionKeyDown) return;
+    state.actionKeyDown = false;
+    state.actionQueued = true;
+    state.actionCharged = performance.now() - actionPressedAt >= ACTION_CHARGE_MS;
+  };
+
   window.addEventListener("keydown", (e) => {
     const dir = KEY_MAP[e.code];
     if (dir) {
       state.keysHeld.add(dir);
       e.preventDefault();
-    } else if (ACTION_KEYS.has(e.code) && !state.actionKeyDown) {
-      state.actionKeyDown = true;
-      state.actionQueued = true;
+    } else if (ACTION_KEYS.has(e.code)) {
+      pressAction();
       e.preventDefault();
     }
   });
@@ -95,17 +109,25 @@ export function setupInput(state, touchpad, actionButton) {
       state.keysHeld.delete(dir);
       e.preventDefault();
     } else if (ACTION_KEYS.has(e.code)) {
-      state.actionKeyDown = false;
+      releaseAction();
     }
   });
 
   if (actionButton) {
-    const trigger = (e) => {
+    const onPress = (e) => {
       e.preventDefault();
-      state.actionQueued = true;
+      pressAction();
     };
-    actionButton.addEventListener("touchstart", trigger, { passive: false });
-    actionButton.addEventListener("mousedown", trigger);
+    const onRelease = (e) => {
+      e.preventDefault();
+      releaseAction();
+    };
+    actionButton.addEventListener("touchstart", onPress, { passive: false });
+    actionButton.addEventListener("touchend", onRelease, { passive: false });
+    actionButton.addEventListener("touchcancel", onRelease, { passive: false });
+    actionButton.addEventListener("mousedown", onPress);
+    actionButton.addEventListener("mouseup", onRelease);
+    actionButton.addEventListener("mouseleave", onRelease);
   }
 
   setupJoystick(state, touchpad.querySelector("#joystick"));
