@@ -103,6 +103,29 @@ canvas#game {
   background: #f0d356;
 }
 
+#difficultySelect {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 0 0 16px;
+}
+
+#difficultySelect button {
+  font-size: 0.95rem;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background: #22222c;
+  color: #eee;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#difficultySelect button:hover {
+  background: #33333f;
+  border-color: #e0c341;
+}
+
 .help {
   font-size: 0.85rem;
   opacity: 0.75;
@@ -122,16 +145,35 @@ canvas#game {
 
 #touchpad {
   display: none;
-  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 28px;
   user-select: none;
   -webkit-user-select: none;
 }
 
-#touchpad .mid {
-  display: flex;
-  gap: 6px;
+/* Fixed-position joystick base: stays put and the knob is dragged within it,
+   as opposed to a "floating" joystick that spawns wherever the touch starts. */
+#joystick {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #22222c;
+  border: 1px solid #444;
+  touch-action: none;
+}
+
+#joystickKnob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border-radius: 50%;
+  background: #3a3a48;
+  border: 1px solid #666;
+  transition: transform 0.05s linear;
 }
 
 #touchpad button {
@@ -146,7 +188,6 @@ canvas#game {
 }
 
 #actionBtn {
-  margin-top: 4px;
   background: #4a3624;
   border-color: #6b4e30;
 }

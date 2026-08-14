@@ -1,4 +1,4 @@
-import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, PLAYER_INVINCIBLE_TICKS, ROCK_TILE, GRASS_TILE, SHIELD_INVINCIBLE_TICKS, DIRECTIONS, DIRECTION_OFFSETS } from "./constants.js";
+import { FPS, TILE_SIZE, MAX_WORLD_COL, MAX_WORLD_ROW, ANIMATION_FRAME_TICKS, ENEMY_CONTACT_DAMAGE, ENEMY_KNOCKBACK, ENEMY_HIT_COOLDOWN_TICKS, PLAYER_INVINCIBLE_TICKS, ROCK_TILE, GRASS_TILE, SHIELD_INVINCIBLE_TICKS, DASH_SPEED, DASH_DURATION_TICKS, DIRECTIONS, DIRECTION_OFFSETS, SCORE_ENEMY_DEFEAT, SCORE_CHOP } from "./constants.js";
 import { checkTileCollision, checkObjectCollision, checkEnemyContact } from "./collision.js";
 import { randInt } from "./random.js";
 
@@ -89,6 +89,7 @@ function chopTile(state) {
   if (tileIndex === ROCK_TILE) {
     if (!player.hasAxeUpgrade) return;
     state.mapTileNum[col][row] = GRASS_TILE;
+    state.score += SCORE_CHOP;
     state.sfx.chop.play();
     showMessage(state, "岩を砕いた");
     return;
@@ -98,6 +99,7 @@ function chopTile(state) {
   if (!tileDef || tileDef.destructibleTo === undefined) return;
 
   state.mapTileNum[col][row] = tileDef.destructibleTo;
+  state.score += SCORE_CHOP;
   state.sfx.chop.play();
   showMessage(state, "You cleared the way");
 }
@@ -116,6 +118,27 @@ function movePlayer(state) {
   player.worldX += dCol * player.speed;
   player.worldY += dRow * player.speed;
   player.isMoving = true;
+}
+
+// Advances an in-progress dash attack: a short burst of movement in the
+// player's facing direction, faster than normal walking and (per
+// handleEnemyContact below) lethal to any enemy touched along the way.
+// Overrides player.speed for the tile-collision lookahead so the dash
+// respects walls/water at its own (longer) reach, mirroring movePlayer.
+function updateDash(state) {
+  const player = state.player;
+  player.dashTicks--;
+
+  const [dCol, dRow] = DIRECTION_OFFSETS[player.direction];
+  const normalSpeed = player.speed;
+  player.speed = DASH_SPEED;
+  checkTileCollision(player, state);
+  if (!player.collisionOn) {
+    player.worldX += dCol * DASH_SPEED;
+    player.worldY += dRow * DASH_SPEED;
+    player.isMoving = true;
+  }
+  player.speed = normalSpeed;
 }
 
 // Alternates the player's walk-cycle frame while moving; holds frame 0
@@ -148,6 +171,8 @@ function tickMessage(state) {
 // so enemies respect the same solid tiles as the player.
 function updateEnemies(state) {
   for (const enemy of state.enemies) {
+    if (enemy.hitCooldownTicks > 0) enemy.hitCooldownTicks--;
+
     enemy.collisionOn = false;
     checkTileCollision(enemy, state);
 
@@ -165,10 +190,43 @@ function updateEnemies(state) {
   }
 }
 
+// Removes the enemy the player just dashed into (see updateDash) - the
+// current means of defeating enemies (issue #24).
+function defeatEnemy(state, index) {
+  state.enemies.splice(index, 1);
+  state.score += SCORE_ENEMY_DEFEAT;
+  state.sfx.chop.play();
+  showMessage(state, "敵を倒した！");
+}
+
+// Applies one dash hit to the enemy at `index`: the "tough" enemy (see
+// entities.js#createEnemy) survives until its hp reaches 0, everything else
+// is defeated in one hit as before.
+function damageEnemy(state, index) {
+  const enemy = state.enemies[index];
+  if (enemy.hitCooldownTicks > 0) return;
+
+  enemy.hp -= 1;
+  if (enemy.hp <= 0) {
+    defeatEnemy(state, index);
+    return;
+  }
+  enemy.hitCooldownTicks = ENEMY_HIT_COOLDOWN_TICKS;
+  state.sfx.chop.play();
+  showMessage(state, `敵にダメージを与えた！ (残り${enemy.hp})`);
+}
+
 // Applies contact damage/knockback and triggers game over at 0 HP (mirrors
-// the intent of Player.hp in the original game's later revisions).
+// the intent of Player.hp in the original game's later revisions). While
+// dashing, contact damages the enemy instead of hurting the player.
 function handleEnemyContact(state) {
   const player = state.player;
+
+  if (player.dashTicks > 0) {
+    const dashIndex = checkEnemyContact(player, state.enemies);
+    if (dashIndex >= 0) damageEnemy(state, dashIndex);
+    return;
+  }
 
   if (player.invincibleTicks > 0) {
     player.invincibleTicks--;
@@ -210,13 +268,18 @@ export function update(state) {
   checkTileCollision(player, state);
   pickUpObject(state, checkObjectCollision(player, state.worldObjects));
 
-  movePlayer(state);
+  if (player.dashTicks > 0) {
+    updateDash(state);
+  } else {
+    movePlayer(state);
+  }
   tickAnimation(state);
   updateEnemies(state);
   handleEnemyContact(state);
 
   if (state.actionQueued) {
     chopTile(state);
+    if (player.dashTicks <= 0) player.dashTicks = DASH_DURATION_TICKS;
     state.actionQueued = false;
   }
 

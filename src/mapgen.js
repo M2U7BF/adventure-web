@@ -183,6 +183,15 @@ export function placeHiddenItems(count, playerTile, existingPlacements) {
   return items;
 }
 
+// Scales a [min, max] obstacle count range by `density` (see
+// constants.js#DIFFICULTIES), keeping the result non-negative and never
+// letting the scaled max fall below the scaled min.
+function scaleRange(min, max, density) {
+  const sMin = Math.max(0, Math.round(min * density));
+  const sMax = Math.max(sMin, Math.round(max * density));
+  return randInt(sMin, sMax);
+}
+
 // Minimum distance (tiles) a randomized object must keep from the player
 // spawn, so the keys/goal aren't handed to the player immediately.
 const MIN_SPAWN_DISTANCE = 14;
@@ -263,7 +272,7 @@ function paintSectionWalls(grid, count) {
   }
 }
 
-export function generateMap(objectPlacements, playerTile) {
+export function generateMap(objectPlacements, playerTile, density = 1) {
   const grid = makeGrid(GRASS_TILE);
 
   // World border: impassable trees, mirroring the original hand-authored map.
@@ -303,18 +312,19 @@ export function generateMap(objectPlacements, playerTile) {
   });
 
   // Forests and shrubs (destructible obstacles) and rocky outcrops
-  // (permanent obstacles) scattered across the remaining grass.
-  paintBlobs(grid, TREE_TILE, randInt(10, 16), {
+  // (permanent obstacles) scattered across the remaining grass. Counts scale
+  // with `density` so easier difficulties feel less cluttered.
+  paintBlobs(grid, TREE_TILE, scaleRange(10, 16, density), {
     steps: randInt(10, 22),
     radius: () => randInt(1, 2),
     canPaint: (t) => t === GRASS_TILE,
   });
-  paintBlobs(grid, BUSH_TILE, randInt(6, 10), {
+  paintBlobs(grid, BUSH_TILE, scaleRange(6, 10, density), {
     steps: randInt(3, 7),
     radius: () => 1,
     canPaint: (t) => t === GRASS_TILE,
   });
-  paintBlobs(grid, ROCK_TILE, randInt(5, 8), {
+  paintBlobs(grid, ROCK_TILE, scaleRange(5, 8, density), {
     steps: randInt(2, 5),
     radius: () => 1,
     canPaint: (t) => t === GRASS_TILE,

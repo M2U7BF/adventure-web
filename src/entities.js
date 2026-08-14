@@ -1,4 +1,4 @@
-import { TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_PLAYER_TILE, OBJECT_DEFS, PLAYER_MAX_HP, ENEMY_SPEED, DIRECTIONS } from "./constants.js";
+import { TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT, DEFAULT_PLAYER_TILE, OBJECT_DEFS, PLAYER_MAX_HP, ENEMY_SPEED, ENEMY_HP, TOUGH_ENEMY_HP, DIRECTIONS } from "./constants.js";
 import { randInt } from "./random.js";
 
 export function createPlayer() {
@@ -22,12 +22,16 @@ export function createPlayer() {
     isMoving: false,
     animTimer: 0,
     animFrame: 0,
+    dashTicks: 0,
   };
 }
 
 // Wandering hazard entity (mirrors Player's movement fields closely enough
-// to be reused by collision.js#checkTileCollision).
-export function createEnemy(col, row) {
+// to be reused by collision.js#checkTileCollision). A "tough" enemy
+// (see main.js#spawnEnemies) survives multiple dash hits instead of one and
+// is drawn differently (see render.js#drawEnemies) so it reads as distinct.
+export function createEnemy(col, row, { tough = false } = {}) {
+  const hp = tough ? TOUGH_ENEMY_HP : ENEMY_HP;
   return {
     worldX: col * TILE_SIZE,
     worldY: row * TILE_SIZE,
@@ -38,6 +42,10 @@ export function createEnemy(col, row) {
     solidAreaDefaultY: 8,
     collisionOn: false,
     wanderTicks: 0,
+    tough,
+    hp,
+    maxHp: hp,
+    hitCooldownTicks: 0,
   };
 }
 
