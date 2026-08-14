@@ -197,3 +197,25 @@ canvas#game {
     display: flex;
   }
 }
+
+/* On phones in landscape, vertical space is too tight to fit the touchpad
+   in normal flow below the game. Instead, pin the joystick and attack
+   button to the left/right edges of the viewport, vertically centered;
+   they're allowed to overlap the game screen. */
+@media (hover: none) and (pointer: coarse) and (orientation: landscape) {
+  #touchpad {
+    position: fixed;
+    inset: 0;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    padding: 0 16px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #touchpad #joystick,
+  #touchpad #actionBtn {
+    pointer-events: auto;
+  }
+}
